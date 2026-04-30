@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIRPro — Healthcare Smart Environment Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --c-forest:    #4A7C59;
+  --c-vital:     #5A8F6A;
+  --c-green:     #6BA07A;
+  --c-sage:      #87B89A;
+  --c-sage-lt:   #B5D4BF;
+  --c-sage-pale: #DCF0E3;
+  --c-bg:        #F4FAF6;
+  --c-bg-2:      #EAF4EE;
+  --c-card:      #FFFFFF;
+  --c-border:    #D2E8D8;
+  --c-dark:      #1A2E22;
+  --c-text:      #2C4A35;
+  --c-muted:     #7A9E85;
+  --c-red:       #C0392B;
+  --c-amber:     #D4680A;
+  --c-blue:      #2980B9;
+  --c-blue-lt:   #EBF5FB;
+  --c-teal:      #1A7A6E;
+  --sidebar-w:   264px;
+  --header-h:    60px;
+  --r:           10px;
+  --r-lg:        14px;
+  --shadow-sm:   0 1px 4px rgba(27,94,32,.07);
+  --shadow:      0 2px 12px rgba(27,94,32,.10);
+  --shadow-lg:   0 8px 28px rgba(27,94,32,.14);
+  --font:        'Plus Jakarta Sans', sans-serif;
+  --font-mono:   'JetBrains Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:auto}
+body{font-family:var(--font);background:var(--c-bg);color:var(--c-text);min-height:100vh;overflow-x:hidden;font-size:14px;line-height:1.5}
+button{font-family:var(--font);cursor:pointer;border:none;background:none}
+select{font-family:var(--font)}
+a{text-decoration:none;color:inherit}
+
+/* SIDEBAR */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:#3D6B4F;display:flex;flex-direction:column;z-index:300;transition:transform .28s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.sidebar-inner{flex:1;overflow-y:auto;overflow-x:hidden}
+.sidebar-inner::-webkit-scrollbar{width:4px}
+.sidebar-inner::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:4px}
+.sb-logo{padding:20px 18px 16px;background:rgba(0,0,0,.08);flex-shrink:0}
+.sb-logo-row{display:flex;align-items:center;gap:10px}
+.sb-logo-icon{width:36px;height:36px;background:#5A8F6A;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sb-brand{font-size:17px;font-weight:800;color:#fff;letter-spacing:-.2px}
+.sb-section-label{padding:16px 18px 6px;font-size:9px;font-weight:700;color:#A8CCAF;text-transform:uppercase;letter-spacing:1.4px}
+.sb-nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;color:rgba(255,255,255,.65);font-size:12.5px;font-weight:500;cursor:pointer;border-left:2.5px solid transparent;transition:background .15s,color .15s,border-color .15s}
+.sb-nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.sb-nav-item.active{background:rgba(255,255,255,.14);color:#fff;border-left-color:#B5D4BF}
+.sb-nav-icon{width:18px;text-align:center;font-size:14px;flex-shrink:0}
+.sb-badge{margin-left:auto;background:#E05252;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px}
+.sb-modules{padding:8px 12px}
+.sb-mod-card{border-radius:8px;padding:9px 12px;margin-bottom:6px;cursor:pointer;transition:transform .15s,filter .15s}
+.sb-mod-card:hover{transform:translateX(2px);filter:brightness(1.08)}
+.sb-mod-airpro{background:linear-gradient(130deg,#4A7C59,#6BA07A)}
+.sb-mod-iris{background:linear-gradient(130deg,#1A6B5E,#2A8C7A)}
+.sb-mod-fire{background:linear-gradient(130deg,#A93226,#D44333)}
+.sb-sub{font-size:10px;color:#B5D4BF;margin-top:1px;font-weight:500}
+.sb-mod-name{color:#fff;font-size:11px;font-weight:700}
+.sb-mod-status{color:rgba(255,255,255,.7);font-size:10px;margin-top:3px;display:flex;align-items:center;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-green{background:#69F0AE;animation:blink 2s infinite}
+.dot-amber{background:#FFD740}
+.dot-red{background:#FF5252;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:250;backdrop-filter:blur(2px)}
+.overlay.show{display:block}
+
+/* HEADER */
+.header{position:fixed;top:0;left:var(--sidebar-w);right:0;height:var(--header-h);background:#fff;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:12px;padding:0 20px;z-index:200;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.hamburger{display:none;flex-direction:column;gap:4.5px;padding:6px;border-radius:6px;transition:background .15s}
+.hamburger:hover{background:var(--c-bg)}
+.hamburger span{display:block;width:20px;height:2px;background:var(--c-text);border-radius:2px}
+.hdr-title{font-size:15px;font-weight:700;color:var(--c-dark);white-space:nowrap}
+.hdr-title em{font-style:normal;color:var(--c-vital)}
+.hdr-controls{display:flex;align-items:center;gap:8px;flex:1;overflow:hidden}
+.ctrl-select{appearance:none;background:var(--c-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236A9E60' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 8px center;border:1px solid var(--c-border);color:var(--c-text);font-size:12px;font-weight:500;padding:6px 26px 6px 10px;border-radius:7px;cursor:pointer;min-width:150px;transition:border-color .15s}
+.ctrl-select:focus{outline:none;border-color:var(--c-vital)}
+.time-tabs{display:flex;gap:2px;background:var(--c-bg);border:1px solid var(--c-border);border-radius:7px;padding:2px;flex-shrink:0}
+.time-tab{font-size:11px;font-weight:600;color:var(--c-muted);padding:4px 10px;border-radius:5px;transition:.15s;white-space:nowrap}
+.time-tab.active{background:var(--c-vital);color:#fff}
+.time-tab:hover:not(.active){background:var(--c-border)}
+.hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.live-pill{display:flex;align-items:center;gap:6px;background:#E8F5E9;border:1px solid #A5D6A7;color:var(--c-vital);font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px}
+.hdr-icon-btn{width:34px;height:34px;background:var(--c-bg);border:1px solid var(--c-border);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;position:relative;transition:background .15s;cursor:pointer}
+.hdr-icon-btn:hover{background:var(--c-border)}
+.hdr-notif{position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#EF5350;border:2px solid #fff;border-radius:50%;font-size:8px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);padding-top:var(--header-h);min-height:100vh}
+.content{padding:20px}
+.section-anchor{scroll-margin-top:calc(var(--header-h) + 16px)}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi-card{background:var(--c-card);border:1px solid var(--c-border);border-radius:var(--r-lg);padding:16px 18px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow .2s,transform .2s}
+.kpi-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.kpi-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r-lg) var(--r-lg) 0 0}
+.kpi-label{font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.6px}
+.kpi-value{font-size:28px;font-weight:800;color:var(--c-dark);line-height:1.1;margin-top:4px}
+.kpi-value .kpi-unit{font-size:14px;font-weight:500;color:var(--c-muted)}
+.kpi-trend{font-size:11px;color:var(--c-muted);margin-top:6px}
+.up{color:var(--c-vital);font-weight:600}
+.down{color:var(--c-amber);font-weight:600}
+.kpi-bg-icon{position:absolute;bottom:10px;right:14px;font-size:28px;opacity:.1}
+
+/* SECTION HDR */
+.section-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.section-hdr h2{font-size:13px;font-weight:700;color:var(--c-dark);white-space:nowrap}
+.section-hdr::after{content:'';flex:1;height:1px;background:var(--c-border)}
+
+/* CARD */
+.card{background:var(--c-card);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);overflow:hidden}
+.card-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--c-border)}
+.card-head h3{font-size:12.5px;font-weight:700;color:var(--c-dark);flex:1}
+.card-icon{width:28px;height:28px;background:var(--c-bg);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.card-action{font-size:11px;font-weight:600;color:var(--c-sage);padding:4px 10px;border:1px solid var(--c-border);border-radius:6px;transition:.15s;flex-shrink:0;cursor:pointer}
+.card-action:hover{background:var(--c-bg);color:var(--c-vital)}
+.card-body{padding:14px 16px}
+
+/* GRIDS */
+.row{display:flex;gap:16px;margin-bottom:16px;align-items:flex-start}
+.row>*{flex:1;min-width:0}
+.col-2{flex:2}
+.col-1{flex:1}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+
+/* DEPT CARDS */
+.dept-card{background:var(--c-card);border:1px solid var(--c-border);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-sm);transition:.2s;cursor:pointer}
+.dept-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.dept-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dept-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.dept-name{font-size:13px;font-weight:800;color:var(--c-dark)}
+.dept-sub{font-size:10px;color:var(--c-muted);margin-top:1px}
+.dept-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dept-stat-val{font-size:16px;font-weight:800;color:var(--c-dark);font-family:var(--font-mono);text-align:center}
+.dept-stat-lbl{font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;text-align:center}
+.dept-status-bar{height:3px;border-radius:2px;margin-top:12px}
+
+/* ZONES */
+.zone-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.zone-filters select{appearance:none;background:var(--c-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236A9E60' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 7px center;border:1px solid var(--c-border);color:var(--c-text);font-size:11.5px;font-weight:500;padding:5px 22px 5px 9px;border-radius:6px;cursor:pointer}
+.zones-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.zone-card{border-radius:9px;padding:12px;border:1px solid var(--c-border);background:var(--c-bg);cursor:pointer;position:relative;transition:border-color .2s,box-shadow .2s,transform .15s}
+.zone-card:hover{border-color:var(--c-vital);transform:translateY(-1px);box-shadow:0 4px 14px rgba(46,125,50,.12)}
+.zone-card.z-alert{background:#FFF5F5;border-color:#FFCDD2}
+.zone-card.z-warn{background:#FFFDE7;border-color:#FFE082}
+.z-dot{position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%}
+.z-dot-ok{background:#66BB6A}
+.z-dot-warn{background:#FFC107;animation:blink 1.5s infinite}
+.z-dot-alert{background:#EF5350;animation:blink 1s infinite}
+.z-name{font-size:9.5px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.5px;padding-right:14px}
+.z-temp{font-size:26px;font-weight:800;color:var(--c-dark);line-height:1;margin-top:3px;font-family:var(--font-mono)}
+.z-temp .z-unit{font-size:12px;font-weight:500;color:var(--c-muted);font-family:var(--font)}
+.z-bar-row{display:flex;align-items:center;gap:8px;margin:7px 0}
+.z-bar-bg{flex:1;height:5px;background:#C8E6C9;border-radius:3px;overflow:hidden}
+.z-bar-fill{height:100%;border-radius:3px;transition:width .6s}
+.z-bar-ok{background:var(--c-vital)}
+.z-bar-warm{background:#FFA726}
+.z-bar-hot{background:#EF5350}
+.z-set{font-size:9px;color:var(--c-muted);white-space:nowrap}
+.z-tags{display:flex;gap:5px;flex-wrap:wrap}
+.z-tag{font-size:9.5px;font-weight:600;padding:2px 6px;border-radius:8px}
+.zt-ok{background:#E8F5E9;color:var(--c-vital)}
+.zt-warn{background:#FFF3E0;color:var(--c-amber)}
+.zt-alert{background:#FFEBEE;color:var(--c-red)}
+.zt-info{background:var(--c-blue-lt);color:var(--c-blue)}
+.zt-muted{background:var(--c-bg-2);color:var(--c-muted)}
+
+/* ALERTS */
+.alert-list{display:flex;flex-direction:column}
+.alert-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--c-bg-2)}
+.alert-row:last-child{border-bottom:none;padding-bottom:0}
+.alert-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.ad-red{background:#EF5350}
+.ad-amber{background:#FFC107}
+.ad-blue{background:#42A5F5}
+.ad-green{background:#66BB6A}
+.ad-purple{background:#AB47BC}
+.alert-body{flex:1;min-width:0}
+.alert-msg{font-size:12px;font-weight:600;color:var(--c-dark)}
+.alert-sub{font-size:11px;color:var(--c-muted);margin-top:2px;line-height:1.4}
+.alert-time{font-size:10px;color:var(--c-muted);white-space:nowrap;flex-shrink:0;margin-top:2px}
+
+/* METRICS */
+.metric-card{background:var(--c-card);border:1px solid var(--c-border);border-radius:var(--r);padding:14px 16px;text-align:center;box-shadow:var(--shadow-sm);transition:.2s}
+.metric-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.metric-icon{font-size:22px;margin-bottom:6px}
+.metric-val{font-size:22px;font-weight:800;color:var(--c-dark);font-family:var(--font-mono)}
+.metric-lbl{font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.metric-status{font-size:10px;font-weight:600;margin-top:6px;padding:2px 8px;border-radius:10px;display:inline-block}
+.ms-ok{background:#E8F5E9;color:var(--c-vital)}
+.ms-warn{background:#FFF3E0;color:var(--c-amber)}
+.ms-crit{background:#FFEBEE;color:var(--c-red)}
+
+/* MODULES */
+.module-card{background:var(--c-card);border:1px solid var(--c-border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm)}
+.module-header{padding:14px 16px;display:flex;align-items:center;gap:12px}
+.mh-airpro{background:linear-gradient(130deg,#4A7C59,#6BA07A)}
+.mh-iris{background:linear-gradient(130deg,#1A6B5E,#2A8C7A)}
+.mh-fire{background:linear-gradient(130deg,#A93226,#D44333)}
+.module-icon{font-size:22px}
+.module-title{color:#fff;font-size:13px;font-weight:800}
+.module-tag{color:rgba(255,255,255,.7);font-size:10px;margin-top:2px}
+.module-body{padding:14px 16px}
+.feat-list{list-style:none}
+.feat-list li{font-size:12px;color:var(--c-text);padding:4px 0;display:flex;gap:7px;align-items:flex-start;border-bottom:1px solid var(--c-bg-2)}
+.feat-list li:last-child{border-bottom:none}
+.feat-chk{color:var(--c-vital);font-weight:800;flex-shrink:0;margin-top:1px}
+.prog-row{margin-bottom:8px}
+.prog-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--c-muted);margin-bottom:3px;font-weight:600}
+.prog-bg{height:5px;background:var(--c-bg-2);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .8s}
+.pf-green{background:var(--c-vital)}
+.pf-teal{background:var(--c-teal)}
+.pf-amber{background:#FFA726}
+
+/* AC TABLE */
+.table-wrap{overflow-x:auto}
+.ac-table{width:100%;border-collapse:collapse}
+.ac-table th{font-size:10.5px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;background:var(--c-bg);border-bottom:1px solid var(--c-border);text-align:left;white-space:nowrap}
+.ac-table td{padding:9px 12px;border-bottom:1px solid var(--c-bg-2);font-size:12.5px;vertical-align:middle}
+.ac-table tr:last-child td{border-bottom:none}
+.ac-table tr:hover td{background:var(--c-bg)}
+.td-zone{font-size:12px;font-weight:700;color:var(--c-dark)}
+.td-unit{font-size:10px;color:var(--c-muted);font-family:var(--font-mono)}
+.mini-bar{width:50px;height:5px;background:var(--c-bg-2);border-radius:3px;overflow:hidden;flex-shrink:0}
+.mini-bar-fill{height:100%;border-radius:3px}
+.td-temp{font-weight:700;font-size:12.5px}
+.temp-ok{color:var(--c-vital)}
+.temp-warm{color:var(--c-amber)}
+.temp-hot{color:var(--c-red)}
+.pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.pill-on{background:#E8F5E9;color:var(--c-vital)}
+.pill-off{background:var(--c-bg-2);color:var(--c-muted)}
+.pill-alert{background:#FFEBEE;color:var(--c-red)}
+
+/* SAVINGS */
+.savings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.sav-card{background:var(--c-bg);border:1px solid var(--c-border);border-radius:9px;padding:12px;text-align:center}
+.sav-card.sav-warn{background:#FFF8E1;border-color:#FFE082}
+.sav-num{font-size:22px;font-weight:800;color:var(--c-vital);font-family:var(--font-mono)}
+.sav-lbl{font-size:10px;color:var(--c-muted);margin-top:3px;font-weight:600}
+
+.chart-wrap{position:relative;width:100%}
+
+/* FOOTER */
+.pg-footer{text-align:center;padding:14px 20px;font-size:10.5px;color:var(--c-muted);border-top:1px solid var(--c-border);background:var(--c-card);margin-top:4px;line-height:1.7}
+
+/* RESPONSIVE */
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.zones-grid{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:1024px){.row{flex-direction:column}}
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg)}.header{left:0}.main{margin-left:0}.hamburger{display:flex}}
+@media(max-width:768px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}.grid-4{grid-template-columns:repeat(2,1fr)}.zones-grid{grid-template-columns:repeat(2,1fr)}.time-tabs{display:none}.content{padding:14px}}
+@media(max-width:520px){.kpi-grid{grid-template-columns:1fr 1fr}.zones-grid{grid-template-columns:1fr}.savings-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-row">
+      <div class="sb-logo-icon">🏥</div>
+      <div>
+        <div class="sb-brand">AIRPro</div>
+        <div class="sb-sub">Healthcare Environment System</div>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-inner">
+    <div class="sb-section-label">Navigation</div>
+    <a class="sb-nav-item active" onclick="goTo('sec-overview',this)"><span class="sb-nav-icon">📊</span>Overview</a>
+    <a class="sb-nav-item" onclick="goTo('sec-departments',this)"><span class="sb-nav-icon">🏥</span>Departments</a>
+    <a class="sb-nav-item" onclick="goTo('sec-zones',this)"><span class="sb-nav-icon">🌡️</span>Zone Monitoring</a>
+    <a class="sb-nav-item" onclick="goTo('sec-live',this)"><span class="sb-nav-icon">📡</span>Live Readings</a>
+    <a class="sb-nav-item" onclick="goTo('sec-alerts',this)"><span class="sb-nav-icon">🔔</span>Live Alerts<span class="sb-badge">3</span></a>
+    <a class="sb-nav-item" onclick="goTo('sec-analytics',this)"><span class="sb-nav-icon">📈</span>Analytics</a>
+    <a class="sb-nav-item" onclick="goTo('sec-modules',this)"><span class="sb-nav-icon">📦</span>Modules</a>
+    <a class="sb-nav-item" onclick="goTo('sec-ac',this)"><span class="sb-nav-icon">❄️</span>AC Control Panel</a>
+    <a class="sb-nav-item" onclick="goTo('sec-safety',this)"><span class="sb-nav-icon">🔥</span>Fire &amp; Safety<span class="sb-badge">1</span></a>
+    <a class="sb-nav-item" onclick="goTo('sec-savings',this)"><span class="sb-nav-icon">💡</span>Value &amp; Savings</a>
+
+    <div class="sb-section-label">Modules</div>
+    <div class="sb-modules">
+      <div class="sb-mod-card sb-mod-airpro" onclick="goTo('sec-ac',null)">
+        <div class="sb-mod-name">❄️ AIRPro</div>
+        <div class="sb-mod-status"><span class="dot dot-green"></span><span id="sb-airpro-count">24 units active</span></div>
+      </div>
+      <div class="sb-mod-card sb-mod-iris" onclick="goTo('sec-live',null)">
+        <div class="sb-mod-name">🌡️ IRIS Ultra</div>
+        <div class="sb-mod-status"><span class="dot dot-green"></span><span id="sb-iris-count">36 sensors live</span></div>
+      </div>
+      <div class="sb-mod-card sb-mod-fire" onclick="goTo('sec-safety',null)">
+        <div class="sb-mod-name">🚨 FireSense</div>
+        <div class="sb-mod-status"><span class="dot dot-amber"></span>1 review needed</div>
+      </div>
+    </div>
+
+
+  </div>
+</aside>
+
+<!-- HEADER -->
+<header class="header">
+  <button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+  <div class="hdr-title">AIRPro <em>Healthcare</em></div>
+  <div class="hdr-controls">
+    <div class="time-tabs">
+      <button class="time-tab" onclick="setTime(this)">1H</button>
+      <button class="time-tab active" onclick="setTime(this)">24H</button>
+      <button class="time-tab" onclick="setTime(this)">7D</button>
+      <button class="time-tab" onclick="setTime(this)">30D</button>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div id="live-clock" style="font-size:11px;color:var(--c-muted);font-family:var(--font-mono);white-space:nowrap;margin-right:4px"></div>
+    <div class="live-pill"><span class="dot dot-green"></span>Live</div>
+    <button class="hdr-icon-btn" onclick="goTo('sec-alerts',null)">🔔<span class="hdr-notif">3</span></button>
+    <button class="hdr-icon-btn">📥</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+<div class="content">
+
+<!-- OVERVIEW -->
+<div id="sec-overview" class="section-anchor">
+
+  <!-- Hero Banner -->
+  <div style="background:linear-gradient(135deg,#3D6B4F 0%,#5A8F6A 40%,#2A7A6E 100%);border-radius:16px;padding:28px 32px;margin-bottom:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(61,107,79,.2)">
+    <div style="position:absolute;top:-30px;right:-30px;width:220px;height:220px;background:rgba(255,255,255,.04);border-radius:50%"></div>
+    <div style="position:absolute;bottom:-50px;right:80px;width:160px;height:160px;background:rgba(255,255,255,.03);border-radius:50%"></div>
+    <div style="position:relative;z-index:2">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="background:rgba(255,255,255,.15);padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:.5px">● LIVE MONITORING</span>
+            <span style="background:rgba(105,240,174,.2);padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;color:#69F0AE">✓ ALL SYSTEMS NOMINAL</span>
+          </div>
+          <div style="font-size:26px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:6px">AIRPro Smart Healthcare<br><span style="color:#A5C89A">Environment Dashboard</span></div>
+          <div style="font-size:13px;color:rgba(255,255,255,.65);max-width:480px">AI-driven climate control, real-time monitoring & energy optimization across all healthcare zones — Hospital · Pharmacy · Labs · Foundation</div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 20px;text-align:center;min-width:90px">
+            <div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--font-mono)" id="hero-sensors">36</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.6);font-weight:600;margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Sensors Live</div>
+          </div>
+          <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 20px;text-align:center;min-width:90px">
+            <div style="font-size:28px;font-weight:800;color:#fff;font-family:var(--font-mono)" id="hero-ac-count">24</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.6);font-weight:600;margin-top:3px;text-transform:uppercase;letter-spacing:.5px">AC Units</div>
+          </div>
+          <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 20px;text-align:center;min-width:90px">
+            <div style="font-size:28px;font-weight:800;color:#69F0AE;font-family:var(--font-mono)" id="hero-energy">24%</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.6);font-weight:600;margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Energy Saved</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi-card" style="cursor:pointer" onclick="goTo('sec-zones',document.querySelectorAll('.sb-nav-item')[2])"><div class="kpi-accent" style="background:var(--c-vital)"></div><div class="kpi-label">Avg Facility Temp</div><div class="kpi-value" id="kpi-temp">22.1<span class="kpi-unit">°C</span></div><div class="kpi-trend" id="kpi-temp-trend"><span class="up">↓ 0.8°</span> vs yesterday</div><div class="kpi-bg-icon">🌡️</div></div>
+    <div class="kpi-card" style="cursor:pointer" onclick="goTo('sec-savings',document.querySelectorAll('.sb-nav-item')[9])"><div class="kpi-accent" style="background:#43A047"></div><div class="kpi-label">Energy Saved Today</div><div class="kpi-value" id="kpi-energy">24<span class="kpi-unit">%</span></div><div class="kpi-trend" id="kpi-energy-trend"><span class="up">↑ 2%</span> vs last week</div><div class="kpi-bg-icon">⚡</div></div>
+    <div class="kpi-card" style="cursor:pointer" onclick="goTo('sec-alerts',document.querySelectorAll('.sb-nav-item')[4])"><div class="kpi-accent" style="background:#E65100"></div><div class="kpi-label">Active Alerts</div><div class="kpi-value" id="kpi-alerts">3</div><div class="kpi-trend" id="kpi-alerts-trend"><span class="down">1 critical</span>, 2 advisory</div><div class="kpi-bg-icon">⚠️</div></div>
+    <div class="kpi-card" style="cursor:pointer" onclick="goTo('sec-ac',document.querySelectorAll('.sb-nav-item')[7])"><div class="kpi-accent" style="background:#0277BD"></div><div class="kpi-label">AC Units Running</div><div class="kpi-value" id="kpi-ac">20<span class="kpi-unit">/24</span></div><div class="kpi-trend" id="kpi-ac-trend">4 scheduled off — occupancy</div><div class="kpi-bg-icon">❄️</div></div>
+  </div>
+
+  <!-- Zone Cards -->
+  <div class="section-hdr" style="margin-top:4px"><h2>🏢 Select Healthcare Zone</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px" id="mainZoneGrid">
+
+    <!-- Hospital Zone -->
+    <div class="zone-hub-card" onclick="openZoneHub('hospital')" style="background:var(--c-card);border:1px solid var(--c-border);border-radius:16px;padding:0;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 36px rgba(27,94,32,.18)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow)'">
+      <div style="background:linear-gradient(135deg,#3D6B4F,#5A8F6A);padding:20px;text-align:center;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-15px;right:-15px;width:80px;height:80px;background:rgba(255,255,255,.07);border-radius:50%"></div>
+        <div style="font-size:42px;margin-bottom:6px;position:relative;z-index:2">🏥</div>
+        <div style="font-size:16px;font-weight:800;color:#fff;position:relative;z-index:2">Hospital</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:3px;position:relative;z-index:2">Main Campus</div>
+      </div>
+      <div style="padding:14px 16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="background:var(--c-bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:800;color:var(--c-dark)">12</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase">Areas</div></div>
+          <div style="background:var(--c-bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:800;color:var(--c-vital)">OK</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase">Status</div></div>
+        </div>
+        <div style="font-size:10.5px;color:var(--c-muted);display:flex;flex-wrap:wrap;gap:4px">
+          <span style="background:#E8F5E9;color:var(--c-vital);padding:2px 7px;border-radius:8px;font-weight:600">ICU</span>
+          <span style="background:#E8F5E9;color:var(--c-vital);padding:2px 7px;border-radius:8px;font-weight:600">HDU</span>
+          <span style="background:#E8F5E9;color:var(--c-vital);padding:2px 7px;border-radius:8px;font-weight:600">OT</span>
+          <span style="background:#E8F5E9;color:var(--c-vital);padding:2px 7px;border-radius:8px;font-weight:600">+more</span>
+        </div>
+        <div style="margin-top:12px;background:#5A8F6A;color:#fff;border-radius:8px;padding:7px;text-align:center;font-size:11px;font-weight:700">View Areas →</div>
+      </div>
+    </div>
+
+    <!-- Pharmacy Zone -->
+    <div class="zone-hub-card" onclick="openZoneHub('pharmacy')" style="background:var(--c-card);border:1px solid var(--c-border);border-radius:16px;padding:0;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 36px rgba(2,119,189,.18)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow)'">
+      <div style="background:linear-gradient(135deg,#01579B,#0288D1);padding:20px;text-align:center;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-15px;right:-15px;width:80px;height:80px;background:rgba(255,255,255,.07);border-radius:50%"></div>
+        <div style="font-size:42px;margin-bottom:6px;position:relative;z-index:2">💊</div>
+        <div style="font-size:16px;font-weight:800;color:#fff;position:relative;z-index:2">Pharmacy</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:3px;position:relative;z-index:2">Lahore Branches</div>
+      </div>
+      <div style="padding:14px 16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="background:var(--c-bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:800;color:var(--c-dark)">4</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase">Branches</div></div>
+          <div style="background:var(--c-bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:800;color:var(--c-vital)">OK</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase">Status</div></div>
+        </div>
+        <div style="font-size:10.5px;color:var(--c-muted);display:flex;flex-wrap:wrap;gap:4px">
+          <span style="background:#E1F5FE;color:#0277BD;padding:2px 7px;border-radius:8px;font-weight:600">Model Town</span>
+          <span style="background:#E1F5FE;color:#0277BD;padding:2px 7px;border-radius:8px;font-weight:600">Johar Town</span>
+          <span style="background:#E1F5FE;color:#0277BD;padding:2px 7px;border-radius:8px;font-weight:600">+2</span>
+        </div>
+        <div style="margin-top:12px;background:#0277BD;color:#fff;border-radius:8px;padding:7px;text-align:center;font-size:11px;font-weight:700">View Branches →</div>
+      </div>
+    </div>
+
+    <!-- Labs Zone -->
+    <div class="zone-hub-card" onclick="openZoneHub('labs')" style="background:var(--c-card);border:1px solid var(--c-border);border-radius:16px;padding:0;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 36px rgba(106,30,158,.18)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow)'">
+      <div style="background:linear-gradient(135deg,#4A148C,#7B1FA2);padding:20px;text-align:center;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-15px;right:-15px;width:80px;height:80px;background:rgba(255,255,255,.07);border-radius:50%"></div>
+        <div style="font-size:42px;margin-bottom:6px;position:relative;z-index:2">🧪</div>
+        <div style="font-size:16px;font-weight:800;color:#fff;position:relative;z-index:2">Laboratory</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:3px;position:relative;z-index:2">Lahore Branches</div>
+      </div>
+      <div style="padding:14px 16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="background:var(--c-bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:800;color:var(--c-dark)">4</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase">Branches</div></div>
+          <div style="background:var(--c-bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:800;color:var(--c-amber)">WARN</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase">Status</div></div>
+        </div>
+        <div style="font-size:10.5px;color:var(--c-muted);display:flex;flex-wrap:wrap;gap:4px">
+          <span style="background:#F3E5F5;color:#7B1FA2;padding:2px 7px;border-radius:8px;font-weight:600">Bahria Town</span>
+          <span style="background:#F3E5F5;color:#7B1FA2;padding:2px 7px;border-radius:8px;font-weight:600">Johar Town</span>
+          <span style="background:#F3E5F5;color:#7B1FA2;padding:2px 7px;border-radius:8px;font-weight:600">+2</span>
+        </div>
+        <div style="margin-top:12px;background:#7B1FA2;color:#fff;border-radius:8px;padding:7px;text-align:center;font-size:11px;font-weight:700">View Branches →</div>
+      </div>
+    </div>
+
+    <!-- Foundation Zone -->
+    <div class="zone-hub-card" onclick="openZoneHub('foundation')" style="background:var(--c-card);border:1px solid var(--c-border);border-radius:16px;padding:0;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 36px rgba(230,81,0,.18)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow)'">
+      <div style="background:linear-gradient(135deg,#BF360C,#E64A19);padding:20px;text-align:center;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-15px;right:-15px;width:80px;height:80px;background:rgba(255,255,255,.07);border-radius:50%"></div>
+        <div style="font-size:42px;margin-bottom:6px;position:relative;z-index:2">🏛️</div>
+        <div style="font-size:16px;font-weight:800;color:#fff;position:relative;z-index:2">Foundation</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:3px;position:relative;z-index:2">Lahore Branches</div>
+      </div>
+      <div style="padding:14px 16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="background:var(--c-bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:800;color:var(--c-dark)">4</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase">Branches</div></div>
+          <div style="background:var(--c-bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:800;color:var(--c-vital)">OK</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase">Status</div></div>
+        </div>
+        <div style="font-size:10.5px;color:var(--c-muted);display:flex;flex-wrap:wrap;gap:4px">
+          <span style="background:#FBE9E7;color:#E64A19;padding:2px 7px;border-radius:8px;font-weight:600">Model Town</span>
+          <span style="background:#FBE9E7;color:#E64A19;padding:2px 7px;border-radius:8px;font-weight:600">DHA</span>
+          <span style="background:#FBE9E7;color:#E64A19;padding:2px 7px;border-radius:8px;font-weight:600">+2</span>
+        </div>
+        <div style="margin-top:12px;background:#E64A19;color:#fff;border-radius:8px;padding:7px;text-align:center;font-size:11px;font-weight:700">View Branches →</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Zone Hub Detail Panel (hidden by default) -->
+  <div id="zoneHubPanel" style="display:none;margin-bottom:20px">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon" id="hubIcon">🏥</div>
+        <h3 id="hubTitle">Zone Details</h3>
+        <button onclick="closeZoneHub()" style="margin-left:auto;background:var(--c-bg);border:1px solid var(--c-border);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--c-muted);cursor:pointer">✕ Close</button>
+      </div>
+      <div class="card-body">
+        <div id="hubSubCards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Status Row -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+    <div class="card" style="cursor:pointer" onclick="goTo('sec-zones',document.querySelectorAll('.sb-nav-item')[2])">
+      <div class="card-head"><div class="card-icon">🌡️</div><h3>Temperature Status</h3></div>
+      <div class="card-body">
+        <div class="prog-row"><div class="prog-labels"><span>✅ Normal Zones</span><span id="ov-cnt-ok">24</span></div><div class="prog-bg"><div class="prog-fill pf-green" id="ov-bar-ok" style="width:85%"></div></div></div>
+        <div class="prog-row"><div class="prog-labels"><span>⚠️ Warning Zones</span><span id="ov-cnt-warn">3</span></div><div class="prog-bg"><div class="prog-fill pf-amber" id="ov-bar-warn" style="width:11%"></div></div></div>
+        <div class="prog-row"><div class="prog-labels"><span>🔴 Alert Zones</span><span id="ov-cnt-alert">1</span></div><div class="prog-bg"><div class="prog-fill" id="ov-bar-alert" style="width:4%;background:var(--c-red)"></div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-icon">⚡</div><h3>Energy Overview</h3></div>
+      <div class="card-body">
+        <div class="prog-row"><div class="prog-labels"><span>AC Efficiency</span><span>94%</span></div><div class="prog-bg"><div class="prog-fill pf-green" style="width:94%"></div></div></div>
+        <div class="prog-row"><div class="prog-labels"><span>Occupancy-based Savings</span><span>31%</span></div><div class="prog-bg"><div class="prog-fill pf-teal" style="width:31%"></div></div></div>
+        <div class="prog-row"><div class="prog-labels"><span>Peak Load Reduction</span><span>19%</span></div><div class="prog-bg"><div class="prog-fill pf-amber" style="width:19%"></div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-icon">🔔</div><h3>Recent Alerts</h3></div>
+      <div class="card-body">
+        <div class="alert-list">
+          <div class="alert-row"><span class="alert-dot ad-red"></span><div class="alert-body"><div class="alert-msg">HIS Server Room — 27.8°C</div><div class="alert-sub">Critical — AC fault suspected</div></div><div class="alert-time">2m</div></div>
+          <div class="alert-row"><span class="alert-dot ad-amber"></span><div class="alert-body"><div class="alert-msg">Pathology Lab — Humidity 76%</div><div class="alert-sub">Ventilation review needed</div></div><div class="alert-time">14m</div></div>
+          <div class="alert-row"><span class="alert-dot ad-amber"></span><div class="alert-body"><div class="alert-msg">Ward G — 24.5°C</div><div class="alert-sub">Above setpoint by 1.5°C</div></div><div class="alert-time">22m</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DEPARTMENTS -->
+<div id="sec-departments" class="section-anchor">
+  <div class="section-hdr"><h2>🏥 Department Status Overview</h2></div>
+  <div class="grid-3" style="margin-bottom:16px">
+    <div class="dept-card" onclick="filterZone('ward',null)">
+      <div class="dept-header"><div class="dept-icon" style="background:#E8F5E9">🛏️</div><div><div class="dept-name">Patient Wards</div><div class="dept-sub">General &amp; Specialist</div></div></div>
+      <div class="dept-stats"><div><div class="dept-stat-val">22.6°</div><div class="dept-stat-lbl">Avg Temp</div></div><div><div class="dept-stat-val">8</div><div class="dept-stat-lbl">Zones</div></div><div><div class="dept-stat-val" style="color:var(--c-amber)">WARN</div><div class="dept-stat-lbl">Status</div></div></div>
+      <div class="dept-status-bar" style="background:var(--c-amber)"></div>
+    </div>
+    <div class="dept-card" onclick="filterZone('ot',null)">
+      <div class="dept-header"><div class="dept-icon" style="background:#E0F2F1">🔬</div><div><div class="dept-name">Operation Theatres</div><div class="dept-sub">Surgical &amp; Procedure Rooms</div></div></div>
+      <div class="dept-stats"><div><div class="dept-stat-val">19.7°</div><div class="dept-stat-lbl">Avg Temp</div></div><div><div class="dept-stat-val">4</div><div class="dept-stat-lbl">Zones</div></div><div><div class="dept-stat-val" style="color:var(--c-vital)">OK</div><div class="dept-stat-lbl">Status</div></div></div>
+      <div class="dept-status-bar" style="background:var(--c-vital)"></div>
+    </div>
+    <div class="dept-card" onclick="filterZone('icu',null)">
+      <div class="dept-header"><div class="dept-icon" style="background:#FCE4EC">💓</div><div><div class="dept-name">ICU / Critical Care</div><div class="dept-sub">High Dependency Units</div></div></div>
+      <div class="dept-stats"><div><div class="dept-stat-val">21.1°</div><div class="dept-stat-lbl">Avg Temp</div></div><div><div class="dept-stat-val">3</div><div class="dept-stat-lbl">Zones</div></div><div><div class="dept-stat-val" style="color:var(--c-vital)">OK</div><div class="dept-stat-lbl">Status</div></div></div>
+      <div class="dept-status-bar" style="background:var(--c-vital)"></div>
+    </div>
+    <div class="dept-card" onclick="filterZone('lab',null)">
+      <div class="dept-header"><div class="dept-icon" style="background:#F3E5F5">🧪</div><div><div class="dept-name">Laboratories</div><div class="dept-sub">Pathology, Microbiology &amp; More</div></div></div>
+      <div class="dept-stats"><div><div class="dept-stat-val">20.6°</div><div class="dept-stat-lbl">Avg Temp</div></div><div><div class="dept-stat-val">5</div><div class="dept-stat-lbl">Zones</div></div><div><div class="dept-stat-val" style="color:var(--c-amber)">WARN</div><div class="dept-stat-lbl">Status</div></div></div>
+      <div class="dept-status-bar" style="background:var(--c-amber)"></div>
+    </div>
+    <div class="dept-card" onclick="filterZone('pharmacy',null)">
+      <div class="dept-header"><div class="dept-icon" style="background:#FFF3E0">💊</div><div><div class="dept-name">Pharmacy</div><div class="dept-sub">Storage, Cold Room &amp; Dispensary</div></div></div>
+      <div class="dept-stats"><div><div class="dept-stat-val">18.2°</div><div class="dept-stat-lbl">Avg Temp</div></div><div><div class="dept-stat-val">3</div><div class="dept-stat-lbl">Zones</div></div><div><div class="dept-stat-val" style="color:var(--c-vital)">OK</div><div class="dept-stat-lbl">Status</div></div></div>
+      <div class="dept-status-bar" style="background:var(--c-vital)"></div>
+    </div>
+    <div class="dept-card" onclick="filterZone('server',null)">
+      <div class="dept-header"><div class="dept-icon" style="background:#FFEBEE">🖥️</div><div><div class="dept-name">Server / Records</div><div class="dept-sub">HIS &amp; Data Rooms</div></div></div>
+      <div class="dept-stats"><div><div class="dept-stat-val">27.8°</div><div class="dept-stat-lbl">Avg Temp</div></div><div><div class="dept-stat-val">2</div><div class="dept-stat-lbl">Zones</div></div><div><div class="dept-stat-val" style="color:var(--c-red)">ALERT</div><div class="dept-stat-lbl">Status</div></div></div>
+      <div class="dept-status-bar" style="background:var(--c-red)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ZONE MONITORING -->
+<div id="sec-zones" class="section-anchor">
+  <div class="section-hdr"><h2>🌡️ Zone Temperature Monitoring</h2></div>
+  <div class="row">
+    <div class="col-2">
+      <div class="card">
+        <div class="card-head"><div class="card-icon">🌡️</div><h3>All Healthcare Zones</h3><span class="card-action" onclick="renderZones()">↻ Refresh</span></div>
+        <div class="card-body">
+          <div class="zone-filters">
+            <select onchange="currentStatusFilter=this.value;renderZones()">
+              <option value="all">All Status</option>
+              <option value="ok">✅ Normal</option>
+              <option value="warn">⚠️ Warning</option>
+              <option value="alert">🔴 Alert</option>
+            </select>
+            <select onchange="currentSort=this.value;renderZones()">
+              <option value="name">Sort: Name</option>
+              <option value="temp-asc">Temp: Low → High</option>
+              <option value="temp-desc">Temp: High → Low</option>
+            </select>
+          </div>
+          <div class="zones-grid" id="zoneGrid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-1">
+      <div class="card">
+        <div class="card-head"><div class="card-icon">📊</div><h3>Zone Summary</h3></div>
+        <div class="card-body">
+          <div style="margin-bottom:14px">
+            <div class="prog-row"><div class="prog-labels"><span>✅ Normal</span><span id="cnt-ok">—</span></div><div class="prog-bg"><div class="prog-fill pf-green" id="bar-ok" style="width:0%"></div></div></div>
+            <div class="prog-row"><div class="prog-labels"><span>⚠️ Warning</span><span id="cnt-warn">—</span></div><div class="prog-bg"><div class="prog-fill pf-amber" id="bar-warn" style="width:0%"></div></div></div>
+            <div class="prog-row"><div class="prog-labels"><span>🔴 Alert</span><span id="cnt-alert">—</span></div><div class="prog-bg"><div class="prog-fill" id="bar-alert" style="width:0%;background:var(--c-red)"></div></div></div>
+          </div>
+          <div class="alert-list">
+            <div class="alert-row"><span class="alert-dot ad-red"></span><div class="alert-body"><div class="alert-msg">HIS Server Room — 27.8°C</div><div class="alert-sub">Critical — AC fault suspected</div></div><div class="alert-time">2m ago</div></div>
+            <div class="alert-row"><span class="alert-dot ad-amber"></span><div class="alert-body"><div class="alert-msg">Pathology Lab — Humidity 76%</div><div class="alert-sub">Ventilation review needed</div></div><div class="alert-time">14m ago</div></div>
+            <div class="alert-row"><span class="alert-dot ad-amber"></span><div class="alert-body"><div class="alert-msg">Ward G — 24.5°C</div><div class="alert-sub">Above setpoint by 1.5°C</div></div><div class="alert-time">22m ago</div></div>
+            <div class="alert-row"><span class="alert-dot ad-green"></span><div class="alert-body"><div class="alert-msg">All ICU zones nominal</div><div class="alert-sub">Temp 20.8–21.4°C · Hum 52–55%</div></div><div class="alert-time">Live</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LIVE READINGS -->
+<div id="sec-live" class="section-anchor">
+  <div class="section-hdr"><h2>📡 Live Environment Readings</h2></div>
+  <div class="grid-4" style="margin-bottom:16px">
+    <div class="metric-card"><div class="metric-icon">🌡️</div><div class="metric-val" id="live-temp">22.1°</div><div class="metric-lbl">Avg Temperature</div><div class="metric-status ms-ok" id="live-temp-s">Normal</div></div>
+    <div class="metric-card"><div class="metric-icon">💧</div><div class="metric-val" id="live-hum">58%</div><div class="metric-lbl">Avg Humidity</div><div class="metric-status ms-ok" id="live-hum-s">Normal</div></div>
+    <div class="metric-card"><div class="metric-icon">🌬️</div><div class="metric-val" id="live-co2">412</div><div class="metric-lbl">CO₂ (ppm)</div><div class="metric-status ms-ok" id="live-co2-s">Safe</div></div>
+    <div class="metric-card"><div class="metric-icon">🔥</div><div class="metric-val">0</div><div class="metric-lbl">Fire Alerts</div><div class="metric-status ms-ok">All Clear</div></div>
+  </div>
+  <div class="grid-4" style="margin-bottom:16px">
+    <div class="metric-card" style="cursor:pointer" onclick="goTo('sec-ac',document.querySelectorAll('.sb-nav-item')[7])"><div class="metric-icon">❄️</div><div class="metric-val" id="live-ac-on">20</div><div class="metric-lbl">AC Units Active</div><div class="metric-status ms-ok">Running</div></div>
+    <div class="metric-card"><div class="metric-icon">⚡</div><div class="metric-val" id="live-kwh">47.3</div><div class="metric-lbl">Current Load (kWh)</div><div class="metric-status ms-ok" id="live-kwh-s">Efficient</div></div>
+    <div class="metric-card" style="cursor:pointer" onclick="goTo('sec-zones',document.querySelectorAll('.sb-nav-item')[2])"><div class="metric-icon">🌡️</div><div class="metric-val" id="live-zones">36</div><div class="metric-lbl">Zones Monitored</div><div class="metric-status ms-ok">All Live</div></div>
+    <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-val" id="live-occ">284</div><div class="metric-lbl">Total Occupants</div><div class="metric-status ms-ok" id="live-occ-s">Normal</div></div>
+  </div>
+</div>
+
+<!-- LIVE ALERTS -->
+<div id="sec-alerts" class="section-anchor">
+  <div class="section-hdr"><h2>🔔 Live Alerts &amp; Notifications</h2></div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-head"><div class="card-icon">🔔</div><h3>All Active Alerts</h3><span class="card-action">Mark all read</span></div>
+    <div class="card-body">
+      <div class="alert-list" id="alertListLive">
+        <div class="alert-row"><span class="alert-dot ad-red"></span><div class="alert-body"><div class="alert-msg">HIS Server Room — 27.8°C</div><div class="alert-sub">Above critical threshold (26°C). Possible AC fault — immediate action required</div></div><div class="alert-time">2m ago</div></div>
+        <div class="alert-row"><span class="alert-dot ad-amber"></span><div class="alert-body"><div class="alert-msg">Pathology Lab — Humidity 76%</div><div class="alert-sub">High humidity may affect reagent integrity — review ventilation</div></div><div class="alert-time">14m ago</div></div>
+        <div class="alert-row"><span class="alert-dot ad-amber"></span><div class="alert-body"><div class="alert-msg">Ward G — Surgical — 24.5°C</div><div class="alert-sub">Above setpoint — occupancy spike detected</div></div><div class="alert-time">22m ago</div></div>
+        <div class="alert-row"><span class="alert-dot ad-blue"></span><div class="alert-body"><div class="alert-msg">Admin Wing — AC scheduled off</div><div class="alert-sub">Occupancy-based automation triggered after hours</div></div><div class="alert-time">28m ago</div></div>
+        <div class="alert-row"><span class="alert-dot ad-purple"></span><div class="alert-body"><div class="alert-msg">Pharmacy Cold Room — Temp 17.9°C</div><div class="alert-sub">Near lower threshold — monitoring closely</div></div><div class="alert-time">45m ago</div></div>
+        <div class="alert-row"><span class="alert-dot ad-green"></span><div class="alert-body"><div class="alert-msg">OT-2 — Restored to 19°C</div><div class="alert-sub">AC resumed after scheduled maintenance window</div></div><div class="alert-time">1h ago</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ANALYTICS -->
+<div id="sec-analytics" class="section-anchor">
+  <div class="section-hdr"><h2>📈 Analytics &amp; Trends</h2></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head"><div class="card-icon">⚡</div><h3>Energy Savings — Before vs After AIRPro</h3><span class="card-action">Export</span></div>
+      <div class="card-body">
+        <div class="savings-grid">
+          <div class="sav-card"><div class="sav-num">24%</div><div class="sav-lbl">Electricity cost reduction</div></div>
+          <div class="sav-card"><div class="sav-num">31%</div><div class="sav-lbl">Unoccupied area savings</div></div>
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="energyChart"></canvas></div>
+        <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;justify-content:center;color:var(--c-muted)">
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#3D6B4F;border-radius:2px;display:inline-block"></span>Before AIRPro</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#B5D4BF;border-radius:2px;display:inline-block"></span>After AIRPro</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-icon">📈</div><h3>Temperature Trend (24h)</h3>
+        <select class="ctrl-select" style="min-width:0;font-size:11px;padding:4px 22px 4px 8px" onchange="updateTrend(this.value)">
+          <option value="avg">Facility Avg</option>
+          <option value="ot">Operation Theatre</option>
+          <option value="icu">ICU</option>
+          <option value="lab">Laboratories</option>
+          <option value="pharmacy">Pharmacy</option>
+          <option value="server">Server Room</option>
+        </select>
+      </div>
+      <div class="card-body"><div class="chart-wrap" style="height:250px"><canvas id="trendChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULES -->
+<div id="sec-modules" class="section-anchor">
+  <div class="section-hdr"><h2>📦 Platform Modules</h2></div>
+  <div class="grid-3">
+    <div class="module-card">
+      <div class="module-header mh-airpro"><span class="module-icon">❄️</span><div><div class="module-title">AIRPro</div><div class="module-tag">Smart AC Management</div></div></div>
+      <div class="module-body">
+        <ul class="feat-list">
+          <li><span class="feat-chk">✓</span>Remote monitoring of all AC units across facilities</li>
+          <li><span class="feat-chk">✓</span>AI-driven control based on occupancy &amp; schedules</li>
+          <li><span class="feat-chk">✓</span>Non-invasive — no modifications to existing units</li>
+          <li><span class="feat-chk">✓</span>Critical zone priority (OT, ICU, pharmacy)</li>
+          <li><span class="feat-chk">✓</span>Predictive fault detection &amp; maintenance alerts</li>
+        </ul>
+        <div style="margin-top:12px">
+          <div class="prog-row"><div class="prog-labels"><span>Unit Uptime</span><span>99.1%</span></div><div class="prog-bg"><div class="prog-fill pf-green" style="width:99%"></div></div></div>
+          <div class="prog-row"><div class="prog-labels"><span>AI Optimization</span><span>Active</span></div><div class="prog-bg"><div class="prog-fill pf-teal" style="width:100%"></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="module-card">
+      <div class="module-header mh-iris"><span class="module-icon">🌡️</span><div><div class="module-title">IRIS Ultra</div><div class="module-tag">Temp &amp; Humidity Monitoring</div></div></div>
+      <div class="module-body">
+        <ul class="feat-list">
+          <li><span class="feat-chk">✓</span>Precision sensing for OTs, labs &amp; pharmacy storage</li>
+          <li><span class="feat-chk">✓</span>Automated breach alerts via SMS &amp; email</li>
+          <li><span class="feat-chk">✓</span>CO₂ monitoring for patient areas &amp; waiting rooms</li>
+          <li><span class="feat-chk">✓</span>Humidity control for sterile &amp; clean rooms</li>
+          <li><span class="feat-chk">✓</span>Continuous data logging for compliance records</li>
+        </ul>
+        <div style="margin-top:12px">
+          <div class="prog-row"><div class="prog-labels"><span>Sensors Active</span><span>36/36</span></div><div class="prog-bg"><div class="prog-fill pf-teal" style="width:100%"></div></div></div>
+          <div class="prog-row"><div class="prog-labels"><span>Data Accuracy</span><span>99.7%</span></div><div class="prog-bg"><div class="prog-fill pf-green" style="width:99.7%"></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="module-card">
+      <div class="module-header mh-fire"><span class="module-icon">🚨</span><div><div class="module-title">FireSense</div><div class="module-tag">Fire &amp; Smoke Detection</div></div></div>
+      <div class="module-body">
+        <ul class="feat-list">
+          <li><span class="feat-chk">✓</span>Real-time fire, smoke &amp; CO detection</li>
+          <li><span class="feat-chk">✓</span>Instant multi-channel emergency alerts</li>
+          <li><span class="feat-chk">✓</span>Healthcare safety &amp; regulatory compliance</li>
+          <li><span class="feat-chk">✓</span>Integration with existing hospital alarm systems</li>
+          <li><span class="feat-chk">✓</span>Zone-by-zone safety audit reporting</li>
+        </ul>
+        <div style="margin-top:12px">
+          <div class="prog-row"><div class="prog-labels"><span>Zone Coverage</span><span>100%</span></div><div class="prog-bg"><div class="prog-fill pf-green" style="width:100%"></div></div></div>
+          <div class="prog-row"><div class="prog-labels"><span>Sensor Status</span><span style="color:var(--c-amber)">93%</span></div><div class="prog-bg"><div class="prog-fill pf-amber" style="width:93%"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AC CONTROL -->
+<div id="sec-ac" class="section-anchor">
+  <div class="section-hdr"><h2>❄️ AC Unit Control Panel</h2></div>
+
+  <!-- Org Tabs -->
+  <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap" id="acOrgTabs"></div>
+
+  <!-- Branch Pills -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+    <span style="font-size:11px;font-weight:600;color:var(--c-muted);white-space:nowrap">Branch:</span>
+    <div id="acBranchPills" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div id="acSummaryRow" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px"></div>
+
+  <!-- Table Card -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-head">
+      <div class="card-icon">📋</div>
+      <h3 id="acTableTitle">AC Units</h3>
+      <select class="ctrl-select" style="min-width:0;font-size:11px;padding:4px 22px 4px 8px;margin-left:8px" onchange="acStatusFilter=this.value;renderACMain()">
+        <option value="all">All Status</option>
+        <option value="on">● Running</option>
+        <option value="off">○ Off</option>
+        <option value="alert">⚠ Alert</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table class="ac-table">
+        <thead><tr><th>Room ID</th><th>Area / Room</th><th>Zone</th><th>Floor</th><th>👥 People</th><th>AC Unit ID</th><th>Status</th><th>Mode</th><th>Set °C</th><th>Room °C</th><th>Energy</th></tr></thead>
+        <tbody id="acBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- FIRE & SAFETY -->
+<div id="sec-safety" class="section-anchor">
+  <div class="section-hdr"><h2>🔥 Fire &amp; Safety Status</h2></div>
+  <div class="grid-4" style="margin-bottom:16px">
+    <div class="metric-card"><div class="metric-icon">🔥</div><div class="metric-val">0</div><div class="metric-lbl">Fire Events</div><div class="metric-status ms-ok">All Clear</div></div>
+    <div class="metric-card"><div class="metric-icon">💨</div><div class="metric-val">0</div><div class="metric-lbl">Smoke Events</div><div class="metric-status ms-ok">All Clear</div></div>
+    <div class="metric-card"><div class="metric-icon">🌫️</div><div class="metric-val">412</div><div class="metric-lbl">CO₂ (ppm)</div><div class="metric-status ms-ok">Safe</div></div>
+    <div class="metric-card"><div class="metric-icon">🚨</div><div class="metric-val">1</div><div class="metric-lbl">Sensor Review</div><div class="metric-status ms-warn">Needed</div></div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-head"><div class="card-icon">🚨</div><h3>FireSense — Zone Coverage</h3><span class="card-action">View Report</span></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:var(--c-dark)">Patient Wards</div><div style="margin-top:6px"><span class="pill pill-on">✅ Clear</span></div></div>
+        <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:var(--c-dark)">OT Complex</div><div style="margin-top:6px"><span class="pill pill-on">✅ Clear</span></div></div>
+        <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:var(--c-dark)">ICU / HDU</div><div style="margin-top:6px"><span class="pill pill-on">✅ Clear</span></div></div>
+        <div style="background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:var(--c-dark)">Lab Block</div><div style="margin-top:6px"><span class="pill" style="background:#FFF3E0;color:var(--c-amber)">⚠ Review</span></div></div>
+        <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:var(--c-dark)">Pharmacy</div><div style="margin-top:6px"><span class="pill pill-on">✅ Clear</span></div></div>
+        <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:var(--c-dark)">Admin Wing</div><div style="margin-top:6px"><span class="pill pill-on">✅ Clear</span></div></div>
+        <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:var(--c-dark)">Server Room</div><div style="margin-top:6px"><span class="pill pill-on">✅ Clear</span></div></div>
+        <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:var(--c-dark)">Reception</div><div style="margin-top:6px"><span class="pill pill-on">✅ Clear</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VALUE & SAVINGS -->
+<div id="sec-savings" class="section-anchor">
+  <div class="section-hdr"><h2>💡 Value &amp; Savings for Healthcare</h2></div>
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-head"><div class="card-icon">💰</div><h3>Cost Impact Summary</h3></div>
+      <div class="card-body">
+        <div class="savings-grid">
+          <div class="sav-card"><div class="sav-num">24%</div><div class="sav-lbl">Electricity cost reduction</div></div>
+          <div class="sav-card"><div class="sav-num">15–30%</div><div class="sav-lbl">Energy savings off-peak</div></div>
+          <div class="sav-card sav-warn"><div class="sav-num">↓</div><div class="sav-lbl">Reduced AC maintenance costs</div></div>
+          <div class="sav-card sav-warn"><div class="sav-num">↓</div><div class="sav-lbl">Equipment failure risk</div></div>
+        </div>
+        <ul class="feat-list">
+          <li><span class="feat-chk">✓</span>Patient comfort &amp; stable ward environments</li>
+          <li><span class="feat-chk">✓</span>Critical zone uptime — OTs, ICUs, pharmacy storage</li>
+          <li><span class="feat-chk">✓</span>Compliance with healthcare environmental standards</li>
+          <li><span class="feat-chk">✓</span>Scalable across hospitals, labs, clinics &amp; pharmacies</li>
+          <li><span class="feat-chk">✓</span>Quick deployment — 1–2 hrs per floor, non-invasive</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-icon">📊</div><h3>Savings Distribution</h3></div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:210px"><canvas id="savingsChart"></canvas></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:14px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--c-muted)"><span style="width:10px;height:10px;background:#3D6B4F;border-radius:2px;flex-shrink:0;display:inline-block"></span>Electricity 35%</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--c-muted)"><span style="width:10px;height:10px;background:#5A8F6A;border-radius:2px;flex-shrink:0;display:inline-block"></span>Energy Waste 28%</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--c-muted)"><span style="width:10px;height:10px;background:#87B89A;border-radius:2px;flex-shrink:0;display:inline-block"></span>Maintenance 20%</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--c-muted)"><span style="width:10px;height:10px;background:#B5D4BF;border-radius:2px;flex-shrink:0;display:inline-block"></span>Operations 17%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+<div class="pg-footer">AIRPro Smart Indoor Environment System — Healthcare Edition · Confidential Document</div>
+</main>
+
+<script>
+/* ── DATA ── */
+const ZONES=[
+  {name:'ICU — Zone A',cat:'icu',temp:21.0,hum:52,co2:398,status:'ok',set:21},
+  {name:'ICU — Zone B',cat:'icu',temp:21.4,hum:54,co2:402,status:'ok',set:21},
+  {name:'ICU — HDU',cat:'icu',temp:20.8,hum:55,co2:395,status:'ok',set:21},
+  {name:'OT 1 — General Surgery',cat:'ot',temp:19.5,hum:48,co2:380,status:'ok',set:20},
+  {name:'OT 2 — Cardiac',cat:'ot',temp:19.2,hum:46,co2:375,status:'ok',set:20},
+  {name:'OT 3 — Orthopaedics',cat:'ot',temp:20.1,hum:50,co2:385,status:'ok',set:20},
+  {name:'OT 4 — ENT',cat:'ot',temp:19.8,hum:47,co2:378,status:'ok',set:20},
+  {name:'Ward A — General',cat:'ward',temp:22.5,hum:60,co2:440,status:'ok',set:23},
+  {name:'Ward B — Paediatric',cat:'ward',temp:23.0,hum:62,co2:445,status:'ok',set:23},
+  {name:'Ward C — Maternity',cat:'ward',temp:22.8,hum:61,co2:438,status:'ok',set:23},
+  {name:'Ward D — Orthopaedics',cat:'ward',temp:22.2,hum:59,co2:432,status:'ok',set:23},
+  {name:'Ward E — Oncology',cat:'ward',temp:22.6,hum:60,co2:442,status:'ok',set:23},
+  {name:'Ward F — Cardiac',cat:'ward',temp:22.9,hum:63,co2:448,status:'ok',set:23},
+  {name:'Ward G — Surgical',cat:'ward',temp:24.5,hum:66,co2:460,status:'warn',set:23},
+  {name:'Ward H — Medical',cat:'ward',temp:22.4,hum:60,co2:440,status:'ok',set:23},
+  {name:'Pathology Lab',cat:'lab',temp:20.5,hum:76,co2:410,status:'warn',set:21},
+  {name:'Microbiology Lab',cat:'lab',temp:23.8,hum:62,co2:420,status:'warn',set:22},
+  {name:'Haematology Lab',cat:'lab',temp:20.2,hum:58,co2:405,status:'ok',set:21},
+  {name:'Biochemistry Lab',cat:'lab',temp:20.8,hum:60,co2:408,status:'ok',set:21},
+  {name:'Blood Bank',cat:'lab',temp:18.0,hum:55,co2:390,status:'ok',set:18},
+  {name:'Pharmacy — Main',cat:'pharmacy',temp:18.5,hum:50,co2:400,status:'ok',set:19},
+  {name:'Pharmacy — Cold Room',cat:'pharmacy',temp:17.9,hum:48,co2:395,status:'ok',set:18},
+  {name:'Pharmacy — Dispensary',cat:'pharmacy',temp:18.2,hum:51,co2:398,status:'ok',set:19},
+  {name:'HIS Server Room',cat:'server',temp:27.8,hum:58,co2:420,status:'alert',set:22},
+  {name:'Medical Records Room',cat:'server',temp:21.5,hum:55,co2:400,status:'ok',set:21},
+  {name:'Admin Block',cat:'admin',temp:22.8,hum:60,co2:415,status:'ok',set:23},
+  {name:'Reception & Waiting',cat:'admin',temp:23.5,hum:63,co2:450,status:'ok',set:23},
+  {name:'HR & Finance',cat:'admin',temp:22.5,hum:59,co2:405,status:'ok',set:23},
+];
+
+/* ── MULTI-ORG AC DATA ── */
+const AC_ORG_DATA = {
+  hospital: {
+    label:'Hospital', icon:'🏥',
+    color:'#1B5E20', colorLight:'#E8F5E9',
+    branches: {
+      'City General — Main Campus': [
+        {rid:'HS-C001',room:'Emergency Ward',zone:'Emergency',floor:'Ground Floor',cap:20,ac:[
+          {id:'AC-HC001A',on:true,mode:'Cool',set:22,room:23,kwh:2.1},
+          {id:'AC-HC001B',on:true,mode:'Cool',set:22,room:23,kwh:2.0}]},
+        {rid:'HS-C002',room:'ICU — Bay A',zone:'ICU',floor:'Floor 1',cap:6,ac:[
+          {id:'AC-HC002',on:true,mode:'Cool',set:21,room:21,kwh:3.1}]},
+        {rid:'HS-C003',room:'ICU — Bay B',zone:'ICU',floor:'Floor 1',cap:6,ac:[
+          {id:'AC-HC003',on:true,mode:'Cool',set:21,room:22,kwh:2.9}]},
+        {rid:'HS-C004',room:'OT Suite 1 — General Surgery',zone:'Operation Theatre',floor:'Floor 2',cap:8,ac:[
+          {id:'AC-HC004',on:true,mode:'Cool',set:18,room:19,kwh:4.2}]},
+        {rid:'HS-C005',room:'OT Suite 2 — Cardiac',zone:'Operation Theatre',floor:'Floor 2',cap:8,ac:[
+          {id:'AC-HC005',on:false,mode:null,set:null,room:25,kwh:null}]},
+        {rid:'HS-C006',room:'General Ward — Male',zone:'Ward',floor:'Floor 3',cap:30,ac:[
+          {id:'AC-HC006A',on:true,mode:'Fan',set:25,room:28,kwh:1.0},
+          {id:'AC-HC006B',on:true,mode:'Fan',set:25,room:28,kwh:1.0}]},
+        {rid:'HS-C007',room:'General Ward — Female',zone:'Ward',floor:'Floor 3',cap:30,ac:[
+          {id:'AC-HC007',on:true,mode:'Cool',set:24,room:27,kwh:1.5}]},
+        {rid:'HS-C008',room:'Outpatient Clinic',zone:'OPD',floor:'Ground Floor',cap:50,ac:[
+          {id:'AC-HC008A',on:true,mode:'Fan',set:25,room:30,kwh:0.9},
+          {id:'AC-HC008B',on:false,mode:null,set:null,room:30,kwh:null}]},
+        {rid:'HS-C009',room:'Radiology Room',zone:'Diagnostics',floor:'Floor 1',cap:5,ac:[
+          {id:'AC-HC009',on:true,mode:'Cool',set:20,room:21,kwh:1.7}]},
+        {rid:'HS-C010',room:'HIS Server Room',zone:'IT',floor:'Basement',cap:0,ac:[
+          {id:'AC-HC010',on:false,mode:null,set:22,room:28,kwh:null,alert:true}]},
+      ],
+      'Maternity Wing': [
+        {rid:'HS-M001',room:'Labour Room 1',zone:'Delivery',floor:'Ground Floor',cap:4,ac:[
+          {id:'AC-HM001',on:true,mode:'Cool',set:22,room:23,kwh:1.8}]},
+        {rid:'HS-M002',room:'Labour Room 2',zone:'Delivery',floor:'Ground Floor',cap:4,ac:[
+          {id:'AC-HM002',on:true,mode:'Cool',set:22,room:24,kwh:1.6}]},
+        {rid:'HS-M003',room:'Neonatal ICU (NICU)',zone:'NICU',floor:'Floor 1',cap:8,ac:[
+          {id:'AC-HM003',on:true,mode:'Cool',set:24,room:24,kwh:2.4}]},
+        {rid:'HS-M004',room:'Post-Op Recovery',zone:'Recovery',floor:'Floor 1',cap:10,ac:[
+          {id:'AC-HM004',on:true,mode:'Fan',set:25,room:26,kwh:0.7}]},
+        {rid:'HS-M005',room:'Antenatal Ward',zone:'Ward',floor:'Floor 2',cap:20,ac:[
+          {id:'AC-HM005',on:false,mode:null,set:null,room:32,kwh:null}]},
+      ],
+    }
+  },
+  pharmacy: {
+    label:'Pharmacy', icon:'💊',
+    color:'#01579B', colorLight:'#E1F5FE',
+    branches: {
+      'Model Town Branch': [
+        {rid:'PH-MT001',room:'Main Dispensary',zone:'Dispensary',floor:'Ground Floor',cap:30,ac:[
+          {id:'AC-PMT001A',on:true,mode:'Cool',set:22,room:23,kwh:1.5},
+          {id:'AC-PMT001B',on:true,mode:'Cool',set:22,room:23,kwh:1.3}]},
+        {rid:'PH-MT002',room:'Cold Storage Room',zone:'Storage',floor:'Ground Floor',cap:0,ac:[
+          {id:'AC-PMT002',on:true,mode:'Cool',set:16,room:17,kwh:3.2}]},
+        {rid:'PH-MT003',room:'Consultation Room',zone:'Clinical',floor:'Floor 1',cap:8,ac:[
+          {id:'AC-PMT003',on:true,mode:'Fan',set:23,room:25,kwh:0.6}]},
+        {rid:'PH-MT004',room:'Staff Office',zone:'Admin',floor:'Floor 1',cap:10,ac:[
+          {id:'AC-PMT004',on:false,mode:null,set:null,room:30,kwh:null}]},
+      ],
+      'Bahria Town Branch': [
+        {rid:'PH-BT001',room:'Retail Floor',zone:'Dispensary',floor:'Ground Floor',cap:40,ac:[
+          {id:'AC-PBT001A',on:true,mode:'Cool',set:23,room:24,kwh:1.8},
+          {id:'AC-PBT001B',on:true,mode:'Fan',set:23,room:24,kwh:0.5}]},
+        {rid:'PH-BT002',room:'Vaccine Storage',zone:'Storage',floor:'Ground Floor',cap:0,ac:[
+          {id:'AC-PBT002',on:true,mode:'Cool',set:15,room:16,kwh:2.9}]},
+        {rid:'PH-BT003',room:'Manager Office',zone:'Admin',floor:'Floor 1',cap:5,ac:[
+          {id:'AC-PBT003',on:false,mode:null,set:null,room:31,kwh:null}]},
+      ],
+      'Johar Town Branch': [
+        {rid:'PH-JT001',room:'Main Dispensary',zone:'Dispensary',floor:'Ground Floor',cap:25,ac:[
+          {id:'AC-PJT001',on:true,mode:'Cool',set:22,room:24,kwh:1.2}]},
+        {rid:'PH-JT002',room:'Cold Room',zone:'Storage',floor:'Ground Floor',cap:0,ac:[
+          {id:'AC-PJT002',on:true,mode:'Cool',set:18,room:19,kwh:2.1}]},
+        {rid:'PH-JT003',room:'Compounding Lab',zone:'Lab',floor:'Floor 1',cap:6,ac:[
+          {id:'AC-PJT003',on:true,mode:'Cool',set:20,room:21,kwh:1.1}]},
+        {rid:'PH-JT004',room:'Record Room',zone:'Admin',floor:'Floor 2',cap:4,ac:[
+          {id:'AC-PJT004',on:false,mode:null,set:null,room:29,kwh:null}]},
+      ],
+      'DHA Phase 5 Branch': [
+        {rid:'PH-DH001',room:'Dispensary Hall',zone:'Dispensary',floor:'Ground Floor',cap:35,ac:[
+          {id:'AC-PDH001',on:true,mode:'Cool',set:22,room:23,kwh:1.6}]},
+        {rid:'PH-DH002',room:'Cold Storage',zone:'Storage',floor:'Ground Floor',cap:0,ac:[
+          {id:'AC-PDH002',on:true,mode:'Cool',set:16,room:17,kwh:3.0}]},
+        {rid:'PH-DH003',room:'Patient Waiting',zone:'Reception',floor:'Ground Floor',cap:20,ac:[
+          {id:'AC-PDH003',on:true,mode:'Fan',set:24,room:28,kwh:0.8}]},
+      ],
+    }
+  },
+  labs: {
+    label:'Laboratory', icon:'🧪',
+    color:'#4A148C', colorLight:'#F3E5F5',
+    branches: {
+      'Model Town Lab': [
+        {rid:'LB-MT001',room:'Pathology Section',zone:'Pathology',floor:'Ground Floor',cap:8,ac:[
+          {id:'AC-LMT001',on:true,mode:'Cool',set:20,room:21,kwh:1.4}]},
+        {rid:'LB-MT002',room:'Biochemistry Section',zone:'Pathology',floor:'Ground Floor',cap:10,ac:[
+          {id:'AC-LMT002',on:true,mode:'Cool',set:20,room:22,kwh:1.6}]},
+        {rid:'LB-MT003',room:'Microbiology Room',zone:'Pathology',floor:'Floor 1',cap:8,ac:[
+          {id:'AC-LMT003',on:true,mode:'Cool',set:19,room:20,kwh:1.9}]},
+        {rid:'LB-MT004',room:'Sample Collection',zone:'Reception',floor:'Ground Floor',cap:20,ac:[
+          {id:'AC-LMT004',on:true,mode:'Fan',set:24,room:27,kwh:0.7}]},
+        {rid:'LB-MT005',room:'Reagent Storage',zone:'Storage',floor:'Basement',cap:0,ac:[
+          {id:'AC-LMT005',on:true,mode:'Cool',set:15,room:16,kwh:2.8}]},
+        {rid:'LB-MT006',room:'Report Dispatch',zone:'Admin',floor:'Floor 1',cap:6,ac:[
+          {id:'AC-LMT006',on:false,mode:null,set:null,room:30,kwh:null}]},
+      ],
+      'Bahria Town Lab': [
+        {rid:'LB-BT001',room:'Haematology Section',zone:'Pathology',floor:'Ground Floor',cap:8,ac:[
+          {id:'AC-LBT001',on:true,mode:'Cool',set:20,room:21,kwh:1.3}]},
+        {rid:'LB-BT002',room:'Blood Bank',zone:'Storage',floor:'Ground Floor',cap:0,ac:[
+          {id:'AC-LBT002',on:true,mode:'Cool',set:18,room:18,kwh:2.2}]},
+        {rid:'LB-BT003',room:'Patient Waiting',zone:'Reception',floor:'Ground Floor',cap:25,ac:[
+          {id:'AC-LBT003',on:true,mode:'Fan',set:25,room:29,kwh:0.6}]},
+      ],
+      'Johar Town Lab': [
+        {rid:'LB-JT001',room:'Microbiology Lab',zone:'Pathology',floor:'Ground Floor',cap:8,ac:[
+          {id:'AC-LJT001',on:true,mode:'Cool',set:20,room:24,kwh:1.7}]},
+        {rid:'LB-JT002',room:'Culture Room',zone:'Pathology',floor:'Floor 1',cap:6,ac:[
+          {id:'AC-LJT002',on:true,mode:'Cool',set:20,room:24,kwh:1.5}]},
+        {rid:'LB-JT003',room:'Reception',zone:'Reception',floor:'Ground Floor',cap:15,ac:[
+          {id:'AC-LJT003',on:false,mode:null,set:null,room:31,kwh:null}]},
+      ],
+      'Gulberg Lab': [
+        {rid:'LB-GB001',room:'Biochemistry Section',zone:'Pathology',floor:'Ground Floor',cap:10,ac:[
+          {id:'AC-LGB001',on:true,mode:'Cool',set:21,room:22,kwh:1.4}]},
+        {rid:'LB-GB002',room:'Hormones Lab',zone:'Pathology',floor:'Floor 1',cap:6,ac:[
+          {id:'AC-LGB002',on:true,mode:'Cool',set:20,room:21,kwh:1.2}]},
+        {rid:'LB-GB003',room:'Waiting Area',zone:'Reception',floor:'Ground Floor',cap:20,ac:[
+          {id:'AC-LGB003',on:true,mode:'Fan',set:25,room:28,kwh:0.5}]},
+      ],
+    }
+  },
+  foundation: {
+    label:'Foundation', icon:'🏛️',
+    color:'#BF360C', colorLight:'#FBE9E7',
+    branches: {
+      'Model Town HQ': [
+        {rid:'FN-MT001',room:'Main Hall',zone:'Community',floor:'Ground Floor',cap:80,ac:[
+          {id:'AC-FMT001A',on:true,mode:'Fan',set:26,room:30,kwh:1.2},
+          {id:'AC-FMT001B',on:true,mode:'Fan',set:26,room:30,kwh:1.1}]},
+        {rid:'FN-MT002',room:'Medical Aid Room',zone:'Clinical',floor:'Ground Floor',cap:10,ac:[
+          {id:'AC-FMT002',on:true,mode:'Cool',set:23,room:25,kwh:0.9}]},
+        {rid:'FN-MT003',room:'Admin Office',zone:'Admin',floor:'Floor 1',cap:12,ac:[
+          {id:'AC-FMT003',on:false,mode:null,set:null,room:33,kwh:null}]},
+        {rid:'FN-MT004',room:'Training Room',zone:'Education',floor:'Floor 1',cap:30,ac:[
+          {id:'AC-FMT004',on:true,mode:'Cool',set:24,room:26,kwh:1.0}]},
+      ],
+      'Bahria Town Centre': [
+        {rid:'FN-BT001',room:'Community Hall',zone:'Community',floor:'Ground Floor',cap:60,ac:[
+          {id:'AC-FBT001',on:true,mode:'Fan',set:26,room:29,kwh:1.0}]},
+        {rid:'FN-BT002',room:'Health Clinic',zone:'Clinical',floor:'Ground Floor',cap:12,ac:[
+          {id:'AC-FBT002',on:true,mode:'Cool',set:23,room:24,kwh:0.8}]},
+        {rid:'FN-BT003',room:'Conference Room',zone:'Meeting',floor:'Floor 1',cap:25,ac:[
+          {id:'AC-FBT003',on:false,mode:null,set:null,room:29,kwh:null}]},
+      ],
+      'Johar Town Branch': [
+        {rid:'FN-JT001',room:'Research Lab A',zone:'Research',floor:'Ground Floor',cap:12,ac:[
+          {id:'AC-FJT001',on:true,mode:'Cool',set:21,room:22,kwh:1.5}]},
+        {rid:'FN-JT002',room:'Research Lab B',zone:'Research',floor:'Ground Floor',cap:12,ac:[
+          {id:'AC-FJT002',on:true,mode:'Cool',set:21,room:23,kwh:1.4}]},
+        {rid:'FN-JT003',room:'Library / Study',zone:'Education',floor:'Floor 2',cap:40,ac:[
+          {id:'AC-FJT003',on:true,mode:'Fan',set:25,room:27,kwh:0.5}]},
+      ],
+      'DHA Phase 6 Branch': [
+        {rid:'FN-DH001',room:'Outreach Centre',zone:'Community',floor:'Ground Floor',cap:50,ac:[
+          {id:'AC-FDH001',on:true,mode:'Cool',set:24,room:26,kwh:1.1}]},
+        {rid:'FN-DH002',room:'Training Hall',zone:'Education',floor:'Ground Floor',cap:35,ac:[
+          {id:'AC-FDH002',on:true,mode:'Fan',set:25,room:28,kwh:0.7}]},
+        {rid:'FN-DH003',room:'Server Room',zone:'IT',floor:'Basement',cap:0,ac:[
+          {id:'AC-FDH003',on:true,mode:'Cool',set:18,room:19,kwh:3.5}]},
+      ],
+    }
+  },
+};
+
+let acActiveOrg = 'hospital';
+let acActiveBranch = null;
+let acStatusFilter = 'all';
+let catFilter='all', currentStatusFilter='all', currentSort='name';
+
+function acGetRows(){
+  const org = AC_ORG_DATA[acActiveOrg];
+  const branches = acActiveBranch ? {[acActiveBranch]: org.branches[acActiveBranch]} : org.branches;
+  const rows = [];
+  Object.values(branches).forEach(rooms => {
+    rooms.forEach(r => {
+      r.ac.forEach(a => {
+        rows.push({rid:r.rid,room:r.room,zone:r.zone,floor:r.floor,cap:r.cap,a});
+      });
+    });
+  });
+  return rows;
+}
+
+function renderACMain(){
+  const org = AC_ORG_DATA[acActiveOrg];
+
+  /* --- Org Tabs --- */
+  document.getElementById('acOrgTabs').innerHTML = Object.entries(AC_ORG_DATA).map(([k,v])=>{
+    const active = k===acActiveOrg;
+    return `<button onclick="acSelectOrg('${k}')" style="display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:1px solid ${active?v.color:'var(--c-border)'};background:${active?v.color:'var(--c-card)'};color:${active?'#fff':'var(--c-muted)'};font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s">
+      <span>${v.icon}</span>${v.label}
+    </button>`;
+  }).join('');
+
+  /* --- Branch Pills --- */
+  const branches = Object.keys(org.branches);
+  document.getElementById('acBranchPills').innerHTML =
+    `<button onclick="acSelectBranch(null)" style="padding:4px 14px;border-radius:20px;border:1px solid ${!acActiveBranch?org.color:'var(--c-border)'};background:${!acActiveBranch?org.color:'var(--c-bg)'};color:${!acActiveBranch?'#fff':'var(--c-muted)'};font-size:11px;font-weight:600;cursor:pointer">All Branches</button>` +
+    branches.map(b=>{
+      const active = acActiveBranch===b;
+      return `<button onclick="acSelectBranch(this)" data-branch="${b}" style="padding:4px 14px;border-radius:20px;border:1px solid ${active?org.color:'var(--c-border)'};background:${active?org.color:'var(--c-bg)'};color:${active?'#fff':'var(--c-muted)'};font-size:11px;font-weight:600;cursor:pointer">${b}</button>`;
+    }).join('');
+
+  /* --- Summary stats --- */
+  const rows = acGetRows();
+  let filtered = rows;
+  if(acStatusFilter!=='all') filtered = rows.filter(r=>{
+    if(acStatusFilter==='on') return r.a.on && !r.a.alert;
+    if(acStatusFilter==='off') return !r.a.on && !r.a.alert;
+    if(acStatusFilter==='alert') return r.a.alert;
+    return true;
+  });
+  const total=rows.length, on=rows.filter(r=>r.a.on&&!r.a.alert).length, off=rows.filter(r=>!r.a.on&&!r.a.alert).length;
+  const alerts=rows.filter(r=>r.a.alert).length;
+  const totalKwh=rows.reduce((s,r)=>s+(r.a.kwh||0),0);
+  document.getElementById('acSummaryRow').innerHTML=`
+    <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--c-dark)">${total}</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase;margin-top:2px">Total Units</div></div>
+    <div style="background:#E8F5E9;border:1px solid #A5D6A7;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--c-vital)">${on}</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase;margin-top:2px">Running</div></div>
+    <div style="background:var(--c-bg-2);border:1px solid var(--c-border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--c-muted)">${off}</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase;margin-top:2px">Off</div></div>
+    <div style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--c-red)">${alerts}</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase;margin-top:2px">Alerts</div></div>
+    <div style="background:#FFF3E0;border:1px solid #FFE0B2;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--c-amber)">${totalKwh.toFixed(1)}</div><div style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:uppercase;margin-top:2px">Total kWh</div></div>
+  `;
+
+  /* --- Title --- */
+  const branchLabel = acActiveBranch || 'All Branches';
+  document.getElementById('acTableTitle').textContent = `${org.icon} ${org.label} — ${branchLabel}`;
+
+  /* --- Table --- */
+  const body = document.getElementById('acBody');
+  if(!body) return;
+  if(!filtered.length){body.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--c-muted)">No units match this filter</td></tr>`;return;}
+  body.innerHTML = filtered.map(({rid,room,zone,floor,cap,a})=>{
+    const statusPill = a.alert
+      ? `<span class="pill pill-alert">⚠ Alert</span>`
+      : a.on ? `<span class="pill pill-on">● ON</span>` : `<span class="pill pill-off">○ OFF</span>`;
+    const modeStyles = {Cool:'background:#E1F5FE;color:#01579B',Fan:'background:#EDE7F6;color:#4A148C',Heat:'background:#FFF3E0;color:#E65100'};
+    const modeTag = a.mode ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;${modeStyles[a.mode]||'background:var(--c-bg);color:var(--c-muted)'}">${a.mode}</span>` : `<span style="color:var(--c-muted)">—</span>`;
+    const roomTempStyle = (a.room>=29)?'color:var(--c-red);font-weight:700':(a.room<=20)?'color:var(--c-blue);font-weight:700':'color:var(--c-vital);font-weight:700';
+    const peopleDisplay = cap>0
+      ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--c-dark)">👤 ${cap}</span>`
+      : `<span style="font-size:11px;color:var(--c-muted)">Storage</span>`;
+    return `<tr>
+      <td><span style="font-family:var(--font-mono);font-size:10.5px;color:var(--c-muted)">${rid}</span></td>
+      <td><div class="td-zone">${room}</div></td>
+      <td style="font-size:11.5px;color:var(--c-muted)">${zone}</td>
+      <td style="font-size:11.5px">${floor}</td>
+      <td>${peopleDisplay}</td>
+      <td><span style="font-family:var(--font-mono);font-size:11px;color:var(--c-blue);font-weight:600">${a.id}</span></td>
+      <td>${statusPill}</td>
+      <td>${modeTag}</td>
+      <td style="font-size:12px;font-weight:600">${a.set?a.set+'°C':'—'}</td>
+      <td style="font-size:12.5px;${roomTempStyle}">${a.room}°C</td>
+      <td style="font-size:11.5px;color:var(--c-muted)">${a.kwh?a.kwh+' kWh':'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function acSelectOrg(org){
+  acActiveOrg=org; acActiveBranch=null;
+  renderACMain();
+}
+function acSelectBranch(btn){
+  acActiveBranch = btn ? btn.dataset.branch : null;
+  renderACMain();
+}
+
+/* ── RENDER ZONES ── */
+function renderZones(){
+  let data=[...ZONES];
+  if(catFilter!=='all') data=data.filter(z=>z.cat===catFilter);
+  if(currentStatusFilter!=='all') data=data.filter(z=>z.status===currentStatusFilter);
+  if(currentSort==='temp-asc') data.sort((a,b)=>a.temp-b.temp);
+  else if(currentSort==='temp-desc') data.sort((a,b)=>b.temp-a.temp);
+  else data.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const grid=document.getElementById('zoneGrid');
+  if(grid) grid.innerHTML=data.map(z=>{
+    const cls=z.status==='alert'?'zone-card z-alert':z.status==='warn'?'zone-card z-warn':'zone-card';
+    const dotCls=z.status==='alert'?'z-dot z-dot-alert':z.status==='warn'?'z-dot z-dot-warn':'z-dot z-dot-ok';
+    const barCls=z.temp>26?'z-bar-hot':z.temp>23.5?'z-bar-warm':'z-bar-ok';
+    const pct=Math.min(100,Math.max(5,((z.temp-12)/20)*100)).toFixed(0);
+    const tagCls=z.status==='alert'?'z-tag zt-alert':z.status==='warn'?'z-tag zt-warn':'z-tag zt-ok';
+    const tagTxt=z.status==='alert'?'🔴 Alert':z.status==='warn'?'⚠ Warn':'✅ OK';
+    return `<div class="${cls}"><span class="${dotCls}"></span>
+      <div class="z-name">${z.name}</div>
+      <div class="z-temp">${z.temp.toFixed(1)}<span class="z-unit">°C</span></div>
+      <div class="z-bar-row"><div class="z-bar-bg"><div class="z-bar-fill ${barCls}" style="width:${pct}%"></div></div><span class="z-set">Set ${z.set}°</span></div>
+      <div class="z-tags"><span class="${tagCls}">${tagTxt}</span><span class="z-tag zt-info">💧${z.hum}%</span><span class="z-tag zt-muted">CO₂ ${z.co2}</span></div>
+    </div>`;
+  }).join('');
+
+  // Update summary
+  const all=ZONES.filter(z=>catFilter==='all'||z.cat===catFilter);
+  const nOk=all.filter(z=>z.status==='ok').length;
+  const nWarn=all.filter(z=>z.status==='warn').length;
+  const nAlert=all.filter(z=>z.status==='alert').length;
+  const total=all.length||1;
+  const $ =id=>document.getElementById(id);
+  if($('cnt-ok')) $('cnt-ok').textContent=nOk;
+  if($('cnt-warn')) $('cnt-warn').textContent=nWarn;
+  if($('cnt-alert')) $('cnt-alert').textContent=nAlert;
+  if($('bar-ok')) $('bar-ok').style.width=(nOk/total*100)+'%';
+  if($('bar-warn')) $('bar-warn').style.width=(nWarn/total*100)+'%';
+  if($('bar-alert')) $('bar-alert').style.width=(nAlert/total*100)+'%';
+}
+
+/* ── RENDER AC TABLE ── */
+function renderACTable(filter){
+  filter=filter||'all';
+  const data=filter==='all'?AC_UNITS:AC_UNITS.filter(u=>u.status===filter);
+  const body=document.getElementById('acBody');
+  if(!body) return;
+  body.innerHTML=data.map(u=>{
+    const pct=Math.min(100,Math.max(5,((u.actual-12)/20)*100)).toFixed(0);
+    const barCls=u.actual>26?'z-bar-hot':u.actual>23.5?'z-bar-warm':'z-bar-ok';
+    const tempCls=u.actual>26?'td-temp temp-hot':u.actual>23.5?'td-temp temp-warm':'td-temp temp-ok';
+    const pillCls=u.status==='on'?'pill pill-on':u.status==='alert'?'pill pill-alert':'pill pill-off';
+    const pillTxt=u.status==='on'?'● Running':u.status==='alert'?'⚠ Alert':'○ Off';
+    return `<tr>
+      <td><div class="td-zone">${u.zone}</div><div class="td-unit">${u.id}</div></td>
+      <td style="font-weight:700">${u.set}°C</td>
+      <td><div style="display:flex;align-items:center;gap:7px"><div class="mini-bar"><div class="mini-bar-fill ${barCls}" style="width:${pct}%"></div></div><span class="${tempCls}">${u.actual}°C</span></div></td>
+      <td>${u.hum}%</td>
+      <td style="font-size:11px;color:var(--c-muted)">${u.power}</td>
+      <td><span class="${pillCls}">${pillTxt}</span></td>
+      <td style="font-size:11px;color:var(--c-muted)">${u.ago}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── CHARTS ── */
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'];
+new Chart(document.getElementById('energyChart').getContext('2d'),{
+  type:'bar',
+  data:{labels:MONTHS,datasets:[
+    {label:'Before',data:[110,108,105,115,120,112,116,110,114,118],backgroundColor:'#3D6B4F',borderRadius:5,barPercentage:.42},
+    {label:'After', data:[84,82,80,87,91,85,88,83,86,90],          backgroundColor:'#B5D4BF',borderRadius:5,barPercentage:.42}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#5A7A5C'}},
+            y:{grid:{color:'#E6F2E1'},ticks:{font:{size:10},color:'#5A7A5C'},title:{display:true,text:'kWh',font:{size:10},color:'#5A7A5C'}}}}
+});
+
+new Chart(document.getElementById('savingsChart').getContext('2d'),{
+  type:'doughnut',
+  data:{labels:['Electricity','Energy Waste','Maintenance','Operations'],
+        datasets:[{data:[35,28,20,17],backgroundColor:['#3D6B4F','#5A8F6A','#87B89A','#B5D4BF'],borderWidth:3,borderColor:'#fff'}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
+});
+
+const HOURS=Array.from({length:25},(_,i)=>i===0?'12am':i<12?i+'am':i===12?'12pm':(i-12)+'pm');
+const TREND_DATA={
+  avg:    [22,21.8,21.5,21.3,21,21.2,21.5,21.8,22,22.2,22.5,22.3,22,21.8,22,22.4,22.1,22.2,22,21.8,21.5,21.3,21.2,21.4,21.6],
+  ot:     [19.5,19.3,19.2,19.1,19,18.9,19,19.1,19.2,19.4,19.5,19.6,19.7,19.8,19.7,19.6,19.5,19.4,19.3,19.2,19.1,19,19.1,19.2,19.3],
+  icu:    [21,20.8,20.5,20.3,21,21.2,21.5,21.8,21,21.3,21.5,21.8,21,21.2,21,20.8,20.5,20.3,21,21.2,21.5,21.3,21.2,21.4,21.6],
+  lab:    [20,20.2,20.5,20.8,21,21.2,21.5,21.8,22,22.3,22.5,22.8,23,23.8,23,22.8,22.5,22.3,22,21.8,21.5,21.3,21.2,21.4,21.6],
+  pharmacy:[18,18.2,18.5,18.3,18,18.2,18.5,18.8,19,19.2,19.5,19.3,19,18.8,18.5,18.3,18,18.2,18.5,18.3,18,18.2,18.5,18.3,18],
+  server: [23,22.8,22.5,22.3,22,22.2,22.5,23,24,25,26,27,27.8,27.5,27,26.5,26,25.5,25,24.5,24,23.5,23,22.5,22.3],
+};
+let trendChart;
+function buildTrendChart(key){
+  if(trendChart) trendChart.destroy();
+  const d=TREND_DATA[key]||TREND_DATA.avg;
+  const danger=key==='server'?26:key==='ot'?20:key==='pharmacy'?19:key==='icu'?21:23;
+  trendChart=new Chart(document.getElementById('trendChart').getContext('2d'),{
+    type:'line',
+    data:{labels:HOURS,datasets:[
+      {label:'Temperature °C',data:d,borderColor:'#5A8F6A',
+        backgroundColor:(ctx)=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);g.addColorStop(0,'rgba(90,143,106,.15)');g.addColorStop(1,'rgba(90,143,106,.01)');return g;},
+        tension:.4,fill:true,pointRadius:2,pointHoverRadius:5,pointBackgroundColor:'#5A8F6A',borderWidth:2},
+      {label:'Threshold',data:Array(25).fill(danger),borderColor:'#EF5350',borderDash:[5,4],tension:0,fill:false,pointRadius:0,borderWidth:1.5},
+      {label:'Setpoint',data:Array(25).fill(danger-1),borderColor:'#A5C89A',borderDash:[3,4],tension:0,fill:false,pointRadius:0,borderWidth:1.2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',labels:{font:{size:10},color:'#5A7A5C',boxWidth:10,padding:12}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:9.5},color:'#5A7A5C',maxTicksLimit:12}},
+              y:{grid:{color:'#E6F2E1'},ticks:{font:{size:10},color:'#5A7A5C'},min:Math.max(10,Math.min(...d)-2),max:Math.max(...d)+2}}}
+  });
+}
+buildTrendChart('avg');
+function updateTrend(v){buildTrendChart(v)}
+
+/* ── NAVIGATION (click-only, no scroll spy) ── */
+const ALL_PAGES=['sec-overview','sec-departments','sec-zones','sec-live','sec-alerts','sec-analytics','sec-modules','sec-ac','sec-safety','sec-savings'];
+
+function showPage(id, navEl){
+  ALL_PAGES.forEach(pid=>{
+    const el=document.getElementById(pid);
+    if(el) el.style.display=(pid===id)?'block':'none';
+  });
+  document.querySelectorAll('.sb-nav-item').forEach(n=>n.classList.remove('active'));
+  if(navEl) navEl.classList.add('active');
+  window.scrollTo(0,0);
+  if(window.innerWidth<=900) closeSidebar();
+}
+
+function goTo(id, navEl){
+  showPage(id, navEl);
+}
+
+function filterZone(cat, navEl){
+  catFilter=cat;
+  currentStatusFilter='all';
+  renderZones();
+  showPage('sec-zones', navEl);
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+function setTime(btn){
+  document.querySelectorAll('.time-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ── ZONE HUB DATA ── */
+const ZONE_HUBS = {
+  hospital: {
+    icon:'🏥', title:'Hospital — Main Campus Areas',
+    color:'linear-gradient(135deg,#1B5E20,#2E7D32)',
+    subCards:[
+      {icon:'💓',label:'ICU',sub:'Intensive Care Unit',temp:'21.0°C',status:'ok',statusTxt:'Normal',bg:'#E8F5E9'},
+      {icon:'🏥',label:'HDU',sub:'High Dependency Unit',temp:'20.8°C',status:'ok',statusTxt:'Normal',bg:'#E8F5E9'},
+      {icon:'🔬',label:'OT Complex',sub:'Operation Theatres 1–4',temp:'19.7°C',status:'ok',statusTxt:'Normal',bg:'#E8F5E9'},
+      {icon:'🛏️',label:'Patient Wards',sub:'Wards A–H',temp:'22.6°C',status:'warn',statusTxt:'Warning',bg:'#FFF8E1'},
+      {icon:'🧫',label:'Sterile Zone',sub:'Sterile Processing',temp:'19.2°C',status:'ok',statusTxt:'Normal',bg:'#E8F5E9'},
+      {icon:'🏃',label:'Emergency',sub:'Casualty & Emergency',temp:'23.1°C',status:'ok',statusTxt:'Normal',bg:'#E8F5E9'},
+      {icon:'🍼',label:'Maternity',sub:'Labour & Neonatal',temp:'22.8°C',status:'ok',statusTxt:'Normal',bg:'#E8F5E9'},
+      {icon:'🩻',label:'Radiology',sub:'Imaging & MRI',temp:'21.5°C',status:'ok',statusTxt:'Normal',bg:'#E8F5E9'},
+    ]
+  },
+  pharmacy: {
+    icon:'💊', title:'Pharmacy — Lahore Branches',
+    color:'linear-gradient(135deg,#01579B,#0288D1)',
+    subCards:[
+      {icon:'💊',label:'Model Town Branch',sub:'Main dispensary & cold storage',temp:'18.5°C',status:'ok',statusTxt:'Normal',bg:'#E1F5FE'},
+      {icon:'💊',label:'Bahria Town Branch',sub:'Retail pharmacy & cold room',temp:'18.2°C',status:'ok',statusTxt:'Normal',bg:'#E1F5FE'},
+      {icon:'💊',label:'Johar Town Branch',sub:'Dispensary, lab & consultation',temp:'17.9°C',status:'ok',statusTxt:'Normal',bg:'#E1F5FE'},
+      {icon:'💊',label:'DHA Phase 5 Branch',sub:'Premium pharmacy outlet',temp:'18.6°C',status:'ok',statusTxt:'Normal',bg:'#E1F5FE'},
+    ]
+  },
+  labs: {
+    icon:'🧪', title:'Laboratory — Lahore Branches',
+    color:'linear-gradient(135deg,#4A148C,#7B1FA2)',
+    subCards:[
+      {icon:'🧪',label:'Model Town Lab',sub:'Pathology, Biochemistry & Micro',temp:'20.5°C',status:'warn',statusTxt:'Warning',bg:'#FFF8E1'},
+      {icon:'🧪',label:'Bahria Town Lab',sub:'Haematology & Blood Bank',temp:'18.0°C',status:'ok',statusTxt:'Normal',bg:'#F3E5F5'},
+      {icon:'🧪',label:'Johar Town Lab',sub:'Microbiology & Culture',temp:'23.8°C',status:'warn',statusTxt:'Warning',bg:'#FFF8E1'},
+      {icon:'🧪',label:'Gulberg Lab',sub:'Biochemistry & Hormones',temp:'20.8°C',status:'ok',statusTxt:'Normal',bg:'#F3E5F5'},
+    ]
+  },
+  foundation: {
+    icon:'🏛️', title:'Foundation — Lahore Branches',
+    color:'linear-gradient(135deg,#BF360C,#E64A19)',
+    subCards:[
+      {icon:'🏛️',label:'Model Town HQ',sub:'Head office, training & clinical aid',temp:'22.5°C',status:'ok',statusTxt:'Normal',bg:'#FBE9E7'},
+      {icon:'🏛️',label:'Bahria Town Centre',sub:'Community health & welfare',temp:'22.8°C',status:'ok',statusTxt:'Normal',bg:'#FBE9E7'},
+      {icon:'🏛️',label:'Johar Town Branch',sub:'Research labs & education',temp:'23.0°C',status:'ok',statusTxt:'Normal',bg:'#FBE9E7'},
+      {icon:'🏛️',label:'DHA Phase 6 Branch',sub:'Outreach & training centre',temp:'22.2°C',status:'ok',statusTxt:'Normal',bg:'#FBE9E7'},
+    ]
+  }
+};
+
+function openZoneHub(type){
+  const hub = ZONE_HUBS[type];
+  if(!hub) return;
+  document.getElementById('hubIcon').textContent = hub.icon;
+  document.getElementById('hubTitle').textContent = hub.title;
+  const container = document.getElementById('hubSubCards');
+  const statusColors = {ok:'var(--c-vital)',warn:'var(--c-amber)',alert:'var(--c-red)'};
+  const statusBg = {ok:'#E8F5E9',warn:'#FFF3E0',alert:'#FFEBEE'};
+  container.innerHTML = hub.subCards.map((c,i)=>`
+    <div style="background:${c.bg};border:1px solid var(--c-border);border-radius:12px;padding:14px;cursor:pointer;transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''" onclick="openACFromHub('${type}','${c.label.replace(/'/g,"\\'")}')">
+      <div style="font-size:26px;margin-bottom:8px">${c.icon}</div>
+      <div style="font-size:12.5px;font-weight:800;color:var(--c-dark);margin-bottom:2px">${c.label}</div>
+      <div style="font-size:10px;color:var(--c-muted);margin-bottom:10px">${c.sub}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:18px;font-weight:800;color:var(--c-dark);font-family:var(--font-mono)">${c.temp}</div>
+        <span style="background:${statusBg[c.status]};color:${statusColors[c.status]};font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px">${c.statusTxt}</span>
+      </div>
+      <div style="margin-top:10px;font-size:10px;font-weight:700;color:${statusColors[c.status]};text-align:right">View AC Units →</div>
+    </div>
+  `).join('');
+  document.getElementById('zoneHubPanel').style.display='block';
+  document.getElementById('zoneHubPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function closeZoneHub(){
+  document.getElementById('zoneHubPanel').style.display='none';
+}
+
+/* ── OPEN AC PANEL FROM HUB ── */
+const HUB_TO_AC_ORG = {hospital:'hospital', pharmacy:'pharmacy', labs:'labs', foundation:'foundation'};
+const HUB_BRANCH_MAP = {
+  hospital: {
+    'ICU':'City General — Main Campus','HDU':'City General — Main Campus','OT Complex':'City General — Main Campus',
+    'Patient Wards':'City General — Main Campus','Sterile Zone':'City General — Main Campus','Emergency':'City General — Main Campus',
+    'Maternity':'Maternity Wing','Radiology':'City General — Main Campus'
+  },
+  pharmacy: {
+    'Model Town Branch':'Model Town Branch','Bahria Town Branch':'Bahria Town Branch',
+    'Johar Town Branch':'Johar Town Branch','DHA Phase 5 Branch':'DHA Phase 5 Branch'
+  },
+  labs: {
+    'Model Town Lab':'Model Town Lab','Bahria Town Lab':'Bahria Town Lab',
+    'Johar Town Lab':'Johar Town Lab','Gulberg Lab':'Gulberg Lab'
+  },
+  foundation: {
+    'Model Town HQ':'Model Town HQ','Bahria Town Centre':'Bahria Town Centre',
+    'Johar Town Branch':'Johar Town Branch','DHA Phase 6 Branch':'DHA Phase 6 Branch'
+  }
+};
+function openACFromHub(hubType, label){
+  const org = HUB_TO_AC_ORG[hubType] || hubType;
+  acActiveOrg = org;
+  const branchMap = HUB_BRANCH_MAP[hubType]||{};
+  acActiveBranch = branchMap[label] || null;
+  acStatusFilter = 'all';
+  renderACMain();
+  document.querySelectorAll('.sb-nav-item').forEach(n=>n.classList.remove('active'));
+  showPage('sec-ac', null);
+}
+
+/* ── INIT ── */
+ALL_PAGES.forEach(pid=>{
+  const el=document.getElementById(pid);
+  if(el) el.style.display=(pid==='sec-overview')?'block':'none';
+});
+document.querySelectorAll('.sb-nav-item')[0].classList.add('active');
+renderZones();
+renderACMain();
+
+/* ── REAL-TIME CLOCK in header ── */
+function updateClock(){
+  const n=new Date();
+  const t=n.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const d=n.toLocaleDateString('en-PK',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const el=document.getElementById('live-clock');
+  if(el) el.textContent=d+' · '+t;
+}
+setInterval(updateClock,1000); updateClock();
+
+/* ── REAL-TIME SIMULATION ENGINE ── */
+// State trackers
+let rtTemp=22.1, rtHum=58, rtCo2=412, rtEnergy=24, rtAlerts=3, rtKwh=47.3, rtOcc=284;
+let tickCount=0;
+
+function rnd(min,max){return+(min+(Math.random()*(max-min))).toFixed(1);}
+function rndInt(min,max){return Math.round(min+Math.random()*(max-min));}
+function clamp(v,mn,mx){return Math.min(mx,Math.max(mn,v));}
+
+function rtTick(){
+  tickCount++;
+
+  /* -- Zone temps & humidity (every tick, subtle drift) -- */
+  ZONES.forEach(z=>{
+    z.temp=+clamp(z.temp+(Math.random()-.48)*.15,z.set-2,z.set+4).toFixed(1);
+    z.hum=clamp(z.hum+rndInt(-1,1),30,95);
+    z.co2=clamp(z.co2+rndInt(-4,5),350,600);
+    // status from temp
+    const diff=z.temp-z.set;
+    z.status=diff>3?'alert':diff>1.5?'warn':'ok';
+  });
+  renderZones();
+
+  /* -- Update zone hub sub-cards temps if panel is open -- */
+  const panel=document.getElementById('zoneHubPanel');
+  if(panel && panel.style.display!=='none'){
+    panel.querySelectorAll('[data-rt-temp]').forEach(el=>{
+      const orig=parseFloat(el.dataset.rtTemp);
+      el.textContent=(+(orig+(Math.random()-.5)*.1).toFixed(1))+'°C';
+    });
+  }
+
+  /* -- Global KPI: avg temp -- */
+  rtTemp=+clamp(rtTemp+(Math.random()-.49)*.08,20.5,24.0).toFixed(1);
+  const kpiTempEl=document.getElementById('kpi-temp');
+  if(kpiTempEl) kpiTempEl.innerHTML=rtTemp+'<span class="kpi-unit">°C</span>';
+
+  /* -- Energy saved: slight random walk -- */
+  if(tickCount%5===0){
+    rtEnergy=clamp(rtEnergy+(Math.random()-.45)*.5,20,30);
+    const eEl=document.getElementById('kpi-energy');
+    if(eEl) eEl.innerHTML=rtEnergy.toFixed(0)+'<span class="kpi-unit">%</span>';
+  }
+
+  /* -- AC units running count -- */
+  if(tickCount%8===0){
+    const on=rndInt(18,22);
+    const off=24-on;
+    const kpiAc=document.getElementById('kpi-ac');
+    if(kpiAc) kpiAc.innerHTML=on+'<span class="kpi-unit">/24</span>';
+    const kpiAcTr=document.getElementById('kpi-ac-trend');
+    if(kpiAcTr) kpiAcTr.textContent=off+' scheduled off — occupancy';
+    const liveAcOn=document.getElementById('live-ac-on');
+    if(liveAcOn) liveAcOn.textContent=on;
+  }
+
+  /* -- Humidity (global) -- */
+  rtHum=clamp(rtHum+(Math.random()-.5)*.4,50,72);
+  const humEl=document.getElementById('live-hum');
+  if(humEl) humEl.textContent=Math.round(rtHum)+'%';
+  const humS=document.getElementById('live-hum-s');
+  if(humS){humS.textContent=rtHum>70?'High':rtHum>65?'Watch':'Normal';humS.className='metric-status '+(rtHum>70?'ms-crit':rtHum>65?'ms-warn':'ms-ok');}
+
+  /* -- CO2 -- */
+  rtCo2=clamp(rtCo2+(Math.random()-.5)*6,390,520);
+  const co2El=document.getElementById('live-co2');
+  if(co2El) co2El.textContent=Math.round(rtCo2);
+  const co2S=document.getElementById('live-co2-s');
+  if(co2S){co2S.textContent=rtCo2>500?'Elevated':rtCo2>450?'Moderate':'Safe';co2S.className='metric-status '+(rtCo2>500?'ms-warn':'ms-ok');}
+
+  /* -- Live temp display -- */
+  const liveT=document.getElementById('live-temp');
+  if(liveT) liveT.textContent=rtTemp+'°';
+
+  /* -- kWh load -- */
+  rtKwh=+clamp(rtKwh+(Math.random()-.5)*.8,38,58).toFixed(1);
+  const kwhEl=document.getElementById('live-kwh');
+  if(kwhEl) kwhEl.textContent=rtKwh;
+  const kwhS=document.getElementById('live-kwh-s');
+  if(kwhS){kwhS.textContent=rtKwh>55?'High Load':rtKwh>50?'Moderate':'Efficient';kwhS.className='metric-status '+(rtKwh>55?'ms-warn':'ms-ok');}
+
+  /* -- Occupancy -- */
+  if(tickCount%3===0){
+    rtOcc=clamp(rtOcc+rndInt(-3,4),210,340);
+    const occEl=document.getElementById('live-occ');
+    if(occEl) occEl.textContent=rtOcc;
+  }
+
+  /* -- Overview zone summary bars -- */
+  const allZ=ZONES.length||1;
+  const nOk=ZONES.filter(z=>z.status==='ok').length;
+  const nWarn=ZONES.filter(z=>z.status==='warn').length;
+  const nAlert=ZONES.filter(z=>z.status==='alert').length;
+  const setId=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const setW=(id,pct)=>{const e=document.getElementById(id);if(e)e.style.width=pct+'%';};
+  setId('ov-cnt-ok',nOk); setId('ov-cnt-warn',nWarn); setId('ov-cnt-alert',nAlert);
+  setW('ov-bar-ok',nOk/allZ*100); setW('ov-bar-warn',nWarn/allZ*100); setW('ov-bar-alert',nAlert/allZ*100);
+  setId('cnt-ok',nOk); setId('cnt-warn',nWarn); setId('cnt-alert',nAlert);
+  setW('bar-ok',nOk/allZ*100); setW('bar-warn',nWarn/allZ*100); setW('bar-alert',nAlert/allZ*100);
+
+  /* -- Alert count KPI -- */
+  rtAlerts=nAlert+(nWarn>2?1:0);
+  const aEl=document.getElementById('kpi-alerts');
+  if(aEl) aEl.textContent=rtAlerts;
+
+  /* -- AC panel: update room temps and people counts live -- */
+  if(tickCount%4===0){
+    Object.values(AC_ORG_DATA).forEach(org=>Object.values(org.branches).forEach(rooms=>rooms.forEach(r=>{
+      r.ac.forEach(a=>{
+        if(a.on) a.room=+clamp(a.room+(Math.random()-.48)*.2,a.set-1,a.set+6).toFixed(1);
+        if(a.kwh && a.on) a.kwh=+clamp(a.kwh+(Math.random()-.5)*.05,0.1,5).toFixed(2);
+      });
+      // drift people count
+      if(r.cap>0) r.cap=clamp(r.cap+rndInt(-2,3),0,r.maxCap||r.cap+5);
+    })));
+    renderACMain();
+  }
+
+  /* -- Live alerts feed -- */
+  if(tickCount%15===0) updateAlertsLive();
+
+  /* -- Hero banner stats -- */
+  if(tickCount%6===0){
+    const allAc=Object.values(AC_ORG_DATA).flatMap(o=>Object.values(o.branches).flatMap(b=>b.flatMap(r=>r.ac)));
+    const onCount=allAc.filter(a=>a.on&&!a.alert).length;
+    const sEl=document.getElementById('hero-ac-count');
+    if(sEl) sEl.textContent=onCount;
+    const tEl=document.getElementById('hero-temp');
+    if(tEl) tEl.textContent=rtTemp+'°C';
+  }
+
+  /* -- Sidebar module status -- */
+  if(tickCount%10===0){
+    const allAc2=Object.values(AC_ORG_DATA).flatMap(o=>Object.values(o.branches).flatMap(b=>b.flatMap(r=>r.ac)));
+    const onC=allAc2.filter(a=>a.on&&!a.alert).length;
+    const sbAc=document.getElementById('sb-airpro-count');
+    if(sbAc) sbAc.textContent=onC+' units active';
+    const sbSens=document.getElementById('sb-iris-count');
+    if(sbSens) sbSens.textContent=ZONES.length+' sensors live';
+  }
+}
+
+/* -- Alerts live ticker -- */
+const ALERT_MSGS=[
+  {dot:'ad-red',msg:'HIS Server Room — Temperature Rising',sub:'27.8°C · Critical threshold exceeded',t:'just now'},
+  {dot:'ad-amber',msg:'Johar Town Lab — Humidity 76%',sub:'Ventilation review needed · Pathology risk',t:'2m ago'},
+  {dot:'ad-amber',msg:'Ward G Surgical — 24.5°C',sub:'Above setpoint by 1.5°C · Occupancy spike',t:'4m ago'},
+  {dot:'ad-blue',msg:'Admin Wing — AC scheduled off',sub:'Occupancy-based automation triggered',t:'6m ago'},
+  {dot:'ad-purple',msg:'Pharmacy Cold Room — 17.9°C',sub:'Near lower threshold · Monitoring',t:'9m ago'},
+  {dot:'ad-green',msg:'OT-2 Cardiac — Restored to 19°C',sub:'AC resumed post maintenance window',t:'12m ago'},
+  {dot:'ad-amber',msg:'Model Town Lab — Reagent Storage',sub:'Temp drift +0.4°C · Auto-correction active',t:'15m ago'},
+  {dot:'ad-red',msg:'Emergency Ward — AC-HC001B fault',sub:'Backup unit engaged · Technician alerted',t:'18m ago'},
+];
+let alertIdx=0;
+function updateAlertsLive(){
+  const list=document.getElementById('alertListLive');
+  if(!list) return;
+  alertIdx=(alertIdx+1)%ALERT_MSGS.length;
+  const top=ALERT_MSGS[alertIdx];
+  const rest=ALERT_MSGS.slice(0,5).filter((_,i)=>i!==alertIdx);
+  const all=[top,...rest].slice(0,6);
+  list.innerHTML=all.map(a=>`<div class="alert-row"><span class="alert-dot ${a.dot}"></span><div class="alert-body"><div class="alert-msg">${a.msg}</div><div class="alert-sub">${a.sub}</div></div><div class="alert-time">${a.t}</div></div>`).join('');
+  // Also update badge counts
+  const crit=all.filter(a=>a.dot==='ad-red').length;
+  const warn=all.filter(a=>a.dot==='ad-amber').length;
+  document.querySelectorAll('.sb-badge').forEach((b,i)=>{if(i===0)b.textContent=crit+warn;});
+  const hdrN=document.querySelector('.hdr-notif');
+  if(hdrN) hdrN.textContent=crit+warn;
+}
+
+/* -- Set maxCap for people drift -- */
+Object.values(AC_ORG_DATA).forEach(org=>Object.values(org.branches).forEach(rooms=>rooms.forEach(r=>{
+  r.maxCap=r.cap; // store original as max
+})));
+
+/* -- Initialize people counts as live (randomize slightly from base) -- */
+Object.values(AC_ORG_DATA).forEach(org=>Object.values(org.branches).forEach(rooms=>rooms.forEach(r=>{
+  if(r.cap>0) r.cap=clamp(rndInt(Math.max(0,r.cap-Math.ceil(r.cap*.3)),r.cap),0,r.cap);
+})));
+
+setInterval(rtTick, 3000);
+rtTick(); // run immediately
+</script>
+</body>
+</html>
